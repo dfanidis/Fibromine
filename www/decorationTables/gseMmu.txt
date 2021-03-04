@@ -1,0 +1,20 @@
+DatasetID	DescrContrast	Stars count
+GSE103355	Fra2tg_vs_WT	5
+GSE16846	BleomycinD14_vs_Ctrl	2
+GSE18800	BleomycinD14_vs_BleomycinD7	4
+GSE18800	BleomycinD14_vs_Ctrl	4
+GSE18800	BleomycinD7_vs_Ctrl	5
+GSE25640	BleomycinD21_vs_Ctrl	6
+GSE34814	BleomycinD14_vs_Ctrl	5
+GSE37635	BleomycinD14_vs_BleomycinD7	2
+GSE37635	BleomycinD14_vs_Ctrl	5
+GSE37635	BleomycinD7_vs_Ctrl	5
+GSE40151	BleomycinD14_vs_Ctrl	3
+GSE43695	BleomycinD5_vs_Ctrl	4
+GSE66634	TGFa_vs_Ctrl	3
+GSE77326	BleomycinD21_vs_Ctrl	3
+GSE94522	BleomycinD14_vs_Ctrl	4
+GSE94699	CD11b_bleo_D8_vs_SiglecF_naive_D0	1
+GSE94699	SiglecF_bleo_D8_vs_CD11b_bleo_D8	2
+GSE94699	SiglecF_bleo_D8_vs_SiglecF_naive_D0	2
+GSE98468	BleomycinD14_vs_Ctrl	5

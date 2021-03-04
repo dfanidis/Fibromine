@@ -1,0 +1,80 @@
+/* Text classes */
+
+h1, h2, h3 {
+	font-weight: bold;
+	text-align: center;
+	color: #d42132;
+}
+
+h4 {
+	font-weight: bold;
+	color: #d42132;
+}
+
+/*h5 {
+	font-weight: bold;
+	text-align: center;
+	color: #008080;
+}*/
+
+a {
+	color: #d42132;
+}
+
+/* Various shiny classes */
+.box-header {
+	font-weight: bold;
+	text-align: center;
+}
+
+.center {
+	display: block;
+ 	margin-left: auto;
+  	margin-right: auto
+}
+
+.help-block {
+	text-align: left;
+}
+
+#shiny-notification-panel {
+  top: 0;
+  bottom: unset;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 450px;
+}
+
+/*Shiny dashboard classes*/
+.skin-green .main-header .logo {
+    background-color: #be1e2d;
+}
+
+.skin-green .main-header .logo:hover {
+    background-color: #be1e2d;
+}
+
+.skin-green .main-header .navbar .sidebar-toggle:hover {
+    background-color: #be1e2d;
+}
+
+.skin-green .main-header .navbar {
+    background-color: #5F5D53;
+}
+
+.skin-green .main-sidebar {
+    background-color: #5F5D53;
+}
+
+/* DT table caption class*/
+caption {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    color: #e34234;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
