@@ -1178,7 +1178,11 @@ shinyUI(dashboardPage(
 							column(width= 12,
 								h2("Datasets benchmarking results"),
 								h3("Coding transcriptomic datasets"),
-								DT::dataTableOutput("decorRes")
+								DT::dataTableOutput("decorRes"),
+								h3("IPF_vs_Ctrl lung coding transcriptomic datasets"),
+								DT::dataTableOutput("decorResII"),
+								h3("BleomD14_vs_Ctrl lung coding transcriptomic datasets"),
+								DT::dataTableOutput("decorResIII")
 							)
 						)
 					)

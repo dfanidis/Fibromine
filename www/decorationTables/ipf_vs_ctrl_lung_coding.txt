@@ -1,0 +1,17 @@
+DatasetID	DescrContrast	Stars count
+GSE10667	IPF_vs_Ctrl	7
+GSE110147	IPF_vs_Ctrl	3
+GSE21369	IPF_vs_Ctrl	1
+GSE24206	IPF_vs_Ctrl	4
+GSE31934	IPF_vs_Ctrl	2
+GSE32537	IPF_vs_Ctrl	3
+GSE47460_A	IPF_vs_Ctrl	7
+GSE47460_B	IPF_vs_Ctrl	3
+GSE48149	IPF_vs_Ctrl	4
+GSE52463	IPF_vs_Ctrl	3
+GSE53845	IPF_vs_Ctrl	7
+GSE5774	IPF_vs_Ctrl	1
+GSE72073	IPF_vs_Ctrl	0
+GSE83717	IPF_vs_Ctrl	4
+GSE92592	IPF_vs_Ctrl	2
+GSE99621	IPF_vs_Ctrl	5
