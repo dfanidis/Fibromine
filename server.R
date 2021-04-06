@@ -2015,27 +2015,25 @@ shinyServer(function(input, output, session) {
 	           all.x= TRUE
 			)
 
+			## Format table
 			stat$Species <- samples$Species
 			stat$Tissue <- samples$Tissue
-			stat$nExpCtrlPostCuration <- samples$nExpCtrlPostCuration
-			stat$Technology <- samples$Tech
-			stat$Stars.count <- samples$Stars.count
-
+			stat$"#Exp/\n#Ctrl" <- samples$nExpCtrlPostCuration
+			stat$Tech <- samples$Tech
+			stat$"Stars count" <- samples$Stars.count
 			stat$Name <- annot_temp$Symbol
 
-			## Format table
-			nSamples <- strsplit(stat$nExpCtrlPostCuration, split= "/")
-			nSamples <- do.call("rbind", nSamples)
-			stat$Exp <- as.integer(nSamples[,1])
-			stat$Ctrl <- suppressWarnings(as.integer(nSamples[,2]))
-			stat$Ctrl[is.na(stat$Ctrl)] <- "pooled"
-			stat <- subset(stat, select= -c(nExpCtrlPostCuration))
+			## Abbreviate to gain some space
+			stat$Species <- gsub("Homo sapiens", "Hsa", stat$Species)
+			stat$Species <- gsub("Mus musculus", "Mmu", stat$Species)
 
-			stat <- stat[, c("Name", "ENSGid", "Species", "Tissue",
-		       "GSE", "StatContrast", "Stars.count", "Exp", "Ctrl",
-		       "Technology", "log2FC", "Pval", "FDR")]
-			colnames(stat)[c(2,5:9)] <- c("Code", "DatasetID","Comparison", 
-		       "Stars count","#Exp", "#Ctrl")
+			## Wrap comparisons to gain more space
+			stat$StatContrast <- gsub("_vs_", "\nvs\n", stat$StatContrast)
+
+			stat <- stat[, c("Name", "Species", "Tissue",
+		       "GSE", "StatContrast", "Stars count", "#Exp/\n#Ctrl",
+		       "Tech", "log2FC", "Pval", "FDR")]
+			colnames(stat)[c(4:5)] <- c("DatasetID","Comparison")
 
 			## Shape RefSeq annotation--------------------------------------------------------------
 			refseq <- annot_temp[,c("RefSeqmRNA","RefSeqncRNA","RefSeqPeptide")]
@@ -2305,27 +2303,25 @@ shinyServer(function(input, output, session) {
 						all.x= TRUE
 					)
 
+					## Format table
 					stat$Species <- samples$Species
 					stat$Tissue <- samples$Tissue
-					stat$nExpCtrlPostCuration <- samples$nExpCtrlPostCuration
-					stat$Technology <- samples$Tech
-					stat$Stars.count <- samples$Stars.count
-
+					stat$"#Exp/\n#Ctrl" <- samples$nExpCtrlPostCuration
+					stat$Tech <- samples$Tech
+					stat$"Stars count" <- samples$Stars.count
 					stat$Name <- annot_temp$Symbol
 
-					## Format table
-					nSamples <- strsplit(stat$nExpCtrlPostCuration, split= "/")
-					nSamples <- do.call("rbind", nSamples)
-					stat$Exp <- as.integer(nSamples[,1])
-					stat$Ctrl <- suppressWarnings(as.integer(nSamples[,2]))
-					stat$Ctrl[is.na(stat$Ctrl)] <- "pooled"
-					stat <- subset(stat, select= -c(nExpCtrlPostCuration))
+					## Abbreviate to gain some space
+					stat$Species <- gsub("Homo sapiens", "Hsa", stat$Species)
+					stat$Species <- gsub("Mus musculus", "Mmu", stat$Species)
 
-					stat <- stat[, c("Name", "ENSGid", "Species", "Tissue",
-						"GSE", "StatContrast", "Stars.count", "Exp", "Ctrl",
-						"Technology", "log2FC", "Pval", "FDR")]
-					colnames(stat)[c(2,5:9)] <- c("Code", "DatasetID","Comparison", 
-						"Stars count","#Exp", "#Ctrl")
+					## Wrap comparisons to gain more space
+					stat$StatContrast <- gsub("_vs_", "\nvs\n", stat$StatContrast)
+
+					stat <- stat[, c("Name", "Species", "Tissue",
+				       "GSE", "StatContrast", "Stars count", "#Exp/\n#Ctrl",
+				       "Tech", "log2FC", "Pval", "FDR")]
+					colnames(stat)[c(4:5)] <- c("DatasetID","Comparison")
 
 					## Shape RefSeq annotation--------------------------------------------------------------
 					refseq <- annot_temp[,c("RefSeqmRNA","RefSeqncRNA","RefSeqPeptide")]
@@ -2449,10 +2445,11 @@ shinyServer(function(input, output, session) {
 					annot_temp <- cbind(miRBaseInfo, ensemblInfo)
 
 					## annot for display
-					annot <- subset(annot_temp, select= c(prodID, prodAC, Chromosome, StartPosition, 
-						EndPosition, Biotype))
+					annot <- subset(annot_temp, select= c(prodID, Aliases, prodAC, Chromosome, 
+					StartPosition, EndPosition, Biotype))
+					annot$Aliases <- gsub("|||", ", ", annot$Aliases, fixed= TRUE)
 					annot$IsTF <- "No"
-					colnames(annot)[c(1,2)] <- c("Name", "Code")
+					colnames(annot)[1:3] <- c("Name", "Aliases", "Code")
 
 					## Retrieve statistics and compute FDR--------------------------------------------------
 					stat <- dbGetQuery(
@@ -2508,19 +2505,26 @@ shinyServer(function(input, output, session) {
 
 					stat$Name <- unique(annot_temp$prodID)
 
-					## Format table			
-					nSamples <- strsplit(stat$nExpCtrlPostCuration, split= "/")
-					nSamples <- do.call("rbind", nSamples)
-					stat$Exp <- as.integer(nSamples[,1])
-					stat$Ctrl <- suppressWarnings(as.integer(nSamples[,2]))
-					stat$Ctrl[is.na(stat$Ctrl)] <- "pooled"
-					stat <- subset(stat, select= -c(nExpCtrlPostCuration))
+					## Format table
+					stat$Species <- samples$Species
+					stat$Tissue <- samples$Tissue
+					stat$"#Exp/\n#Ctrl" <- samples$nExpCtrlPostCuration
+					stat$Tech <- samples$Tech
+					stat$"Stars count" <- samples$Stars.count
+					stat$Name <- unique(annot_temp$prodID)
 
-					stat <- stat[, c("Name", "prodAC", "Species", "Tissue",
-						"GSE", "StatContrastNonCoding", "Stars.count", "Exp", "Ctrl",
-						"Technology", "log2FC", "Pval", "FDR")]
-					colnames(stat)[c(2,5:9)] <- c("Code", "DatasetID","Comparison", 
-						"Stars count","#Exp", "#Ctrl")
+					## Abbreviate to gain some space
+					stat$Species <- gsub("Homo sapiens", "Hsa", stat$Species)
+					stat$Species <- gsub("Mus musculus", "Mmu", stat$Species)
+
+					## Wrap comparisons to gain more space
+					stat$StatContrastNonCoding <- gsub("_vs_", "\nvs\n", 
+						stat$StatContrastNonCoding)
+
+					stat <- stat[, c("Name", "Species", "Tissue",
+				       "GSE", "StatContrastNonCoding", "Stars count", "#Exp/\n#Ctrl",
+				       "Tech", "log2FC", "Pval", "FDR")]
+					colnames(stat)[c(4:5)] <- c("DatasetID","Comparison")
 					
 					## RefSeq info already as "-"-----------------------------------------------------------
 					refseq <- annot_temp[,c("RefSeqmRNA","RefSeqncRNA","RefSeqPeptide")]
@@ -2632,7 +2636,7 @@ shinyServer(function(input, output, session) {
 		datatable(geneInfo(), 
 			selection= "none", 
 			rownames= FALSE,
-			# caption= "Queried genes",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
@@ -2656,12 +2660,11 @@ shinyServer(function(input, output, session) {
 
 		## Convert to factors for easier client-side filtering
 		stat$Name <- as.factor(stat$Name)
-		stat$Code <- as.factor(stat$Code)
 		stat$Species <- as.factor(stat$Species)
 		stat$Tissue <- as.factor(stat$Tissue)
 		stat$DatasetID <- as.factor(stat$DatasetID)
 		stat$Comparison <- as.factor(stat$Comparison)
-		stat$Technology <- as.factor(stat$Technology)
+		stat$Tech <- as.factor(stat$Tech)
 
 		return(stat)
 	})
@@ -2675,9 +2678,6 @@ shinyServer(function(input, output, session) {
 		req(expressionPerGene())
 		
 		out <- expressionPerGene()
-
-		## Remove ensembl column to get more space
-		out$Code <- NULL
 
 		## Color log2FC column
 		brks <- quantile(out$log2FC, probs= seq(0, 1, 0.1), na.rm= TRUE)
@@ -2696,13 +2696,14 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE,
 			filter= "top",
+			class="compact",
 			options= list(
 				rowsGroup= list(0),
 				order= list(list(0, "asc")),
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
 					list(
-						targets= 12, 
+						targets= 11, 
 						visible = FALSE
 					),
 					list(
@@ -2710,8 +2711,8 @@ shinyServer(function(input, output, session) {
 						targets= "_all"
 					)
 				)
-			),
-			extensions= "Responsive"
+			)#,
+			#extensions= "Responsive"
 		) %>% formatStyle(1:ncol(out), 
 			cursor = 'pointer'
 		) %>% formatStyle("log2FC",
