@@ -290,7 +290,8 @@ shinyServer(function(input, output, session) {
 		datatable(out, selection = "multiple", 
 			rownames= FALSE,
 			escape= FALSE, 
-			filter= "top", 
+			filter= "top",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
 			    columnDefs= list(
@@ -362,6 +363,7 @@ shinyServer(function(input, output, session) {
 			rownames= FALSE,
 			escape= FALSE, 
 			filter= "top", 
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
 				columnDefs= list(
@@ -962,14 +964,24 @@ shinyServer(function(input, output, session) {
 		clrsPal <- colorRampPalette(c("green","white","red"))
 		clrs <- clrsPal(length(brks)+1)
 
+		## Combine start end columns to get more space
+		out$Coordinates <- paste(out$Start, out$Stop, sep= ":")
+
+		## Wrap biotypes to get more space
+		out$Biotype <- gsub("_", " ", out$Biotype)
+
 		## Convert to factors for easier client-side filtering of the table
 		out$Name <- as.factor(out$Name)
 		out$Biotype <- as.factor(out$Biotype)
+
+		## Order columns
+		out <- out[,c(1,2,3,10,6:9)]
 
 		dtable <- datatable(data= out, 
 			selection= "none", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0), 
 				order = list(list(0, "asc")),
@@ -980,8 +992,8 @@ shinyServer(function(input, output, session) {
 						targets= "_all"
 					)
 				)
-			),
-	  		extensions= "Responsive"
+			)#,
+	  		#extensions= "Responsive"
 		) %>% formatStyle(1:ncol(out), 
 			cursor = 'pointer'
 		) %>% formatStyle("log2FcAve",
@@ -1039,6 +1051,7 @@ shinyServer(function(input, output, session) {
 			selection= "none", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0), 
 				order = list(list(0, "asc")),
@@ -1102,6 +1115,7 @@ shinyServer(function(input, output, session) {
 			# autoWidth= TRUE,	## To fix column width when filtering
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0), 
 				order = list(list(0, "asc")),
@@ -1246,6 +1260,7 @@ shinyServer(function(input, output, session) {
 			selection= "single", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
@@ -1741,6 +1756,7 @@ shinyServer(function(input, output, session) {
 			selection="multiple", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0), 
 				order = list(list(0, "asc")),
@@ -1800,6 +1816,7 @@ shinyServer(function(input, output, session) {
 			selection="multiple", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0), 
 				order = list(list(0, "asc")),
@@ -2771,6 +2788,7 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup= list(0),
 				order= list(list(0, "asc")),
@@ -2834,6 +2852,7 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE,
 			filter= "top", 
+			class= "compact",
 			options= list(
 				rowsGroup= list(0),
 				order= list(list(0, "asc")),
@@ -2900,6 +2919,7 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE,
 			filter= "top", 
+			class= "compact",
 			options= list(
 				rowsGroup= list(0),
 				order= list(list(0, "asc")),
@@ -2960,6 +2980,7 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE, 
 			filter= "top", 
+			class= "compact",
 			options = list(
 				rowsGroup= list(0),
 				order= list(list(0, "asc")),
@@ -3425,6 +3446,7 @@ shinyServer(function(input, output, session) {
 		datatable(depData(), selection = "multiple", 
 			rownames= FALSE,
 			escape= FALSE, 
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
 				columnDefs= list(
@@ -3770,6 +3792,7 @@ shinyServer(function(input, output, session) {
 			selection="none", 
 			rownames= FALSE,
 			filter= "top",
+			class= "compact",
 			options= list(
 				rowsGroup = list(0),
 				sDom  = '<"top">lrt<"bottom">ip',
@@ -3783,8 +3806,8 @@ shinyServer(function(input, output, session) {
 						targets= "_all"
 					)
 				) 
-			),
-			extensions= "Responsive"
+			)#,
+			#extensions= "Responsive"
 		) %>% formatStyle("log2FC",
 			backgroundColor= styleInterval(brks, clrs)
 		) %>% formatStyle("Pval", "pvalColor",
@@ -3941,6 +3964,7 @@ shinyServer(function(input, output, session) {
 			escape= FALSE, 
 			filter= "top",
 			width= "100%",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
@@ -4031,6 +4055,7 @@ shinyServer(function(input, output, session) {
 			escape= FALSE, 
 			filter= "top",
 			width= "100%",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
@@ -4120,6 +4145,7 @@ shinyServer(function(input, output, session) {
 			escape= FALSE, 
 			filter= "top",
 			width= "100%",
+			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
