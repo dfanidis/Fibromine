@@ -89,6 +89,7 @@ shinyUI(dashboardPage(
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_5"),
 			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_6"),
+			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")),
 
 			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/aidinis-lab") %>% add_class("step_7"),
 			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_8")
@@ -1271,6 +1272,17 @@ shinyUI(dashboardPage(
 				wellPanel(
 					fluidRow(
 						includeMarkdown("./www/docs.md")
+					)
+				)
+			),
+
+			# ============================================================================
+			# How to tab
+			# ============================================================================
+			tabItem(tabName= "HowTo",
+				wellPanel(
+					fluidRow(
+						includeMarkdown("./www/howTo.md")
 					)
 				)
 			)

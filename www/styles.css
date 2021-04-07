@@ -6,16 +6,10 @@ h1, h2, h3 {
 	color: #d42132;
 }
 
-h4 {
+h4, h5 {
 	font-weight: bold;
 	color: #d42132;
 }
-
-/*h5 {
-	font-weight: bold;
-	text-align: center;
-	color: #008080;
-}*/
 
 a {
 	color: #d42132;
