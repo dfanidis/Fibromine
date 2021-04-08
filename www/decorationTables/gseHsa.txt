@@ -25,7 +25,7 @@ GSE35145	AdvancedIPF_vs_Ctrl	5
 GSE40839	IPF_vs_Ctrl	4
 GSE44723	SlowIPF_vs_Ctrl	2
 GSE45251	Ctrl/TNFa_vs_Ctrl	4
-GSE45686	Ctrl/IPFMedium_vs_Ctrl/CtrlMedium	1
+GSE45686	Ctrl/IPFMedium_vs_Ctrl/CtrlMedium	0
 GSE45686	IPF/CtrlMedium_vs_Ctrl/CtrlMedium	0
 GSE45686	IPF/IPFMedium_vs_Ctrl/IPFMedium	0
 GSE45686	IPF/IPFMedium_vs_IPF/CtrlMedium	1

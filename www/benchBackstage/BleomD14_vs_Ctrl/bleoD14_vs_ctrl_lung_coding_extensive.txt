@@ -1,0 +1,6 @@
+ID	DatasetID	Ref	Technology	#Experimental	#Control	Stars count	genesStar	detectedStar	degsStar	ratioStar	fcBinsStar	pvalStar	adjpStar	DescrContrast
+GSE16846|||BleomycinD14_vs_Ctrl	GSE16846	Increased local expression of coagulation factor X contributes to the fibrotic response in human and murine lung injury.	Expression profiling by array	3	3	2	0	0	0	0	0	1	1	BleomycinD14_vs_Ctrl
+GSE18800|||BleomycinD14_vs_Ctrl	GSE18800	Prostaglandin F(2alpha) receptor signaling facilitates bleomycin-induced pulmonary fibrosis independently of transforming growth factor-beta.	Expression profiling by array	3	4	5	1	1	0	1	1	0	1	BleomycinD14_vs_Ctrl
+GSE34814|||BleomycinD14_vs_Ctrl	GSE34814	miR-199a-5p Is upregulated during fibrogenic response to tissue injury and mediates TGFbeta-induced lung fibroblast activation by targeting caveolin-1.	Expression profiling by array	3	3	5	1	0	1	0	1	1	1	BleomycinD14_vs_Ctrl
+GSE37635|||BleomycinD14_vs_Ctrl	GSE37635	Novel combination of collagen dynamics analysis and transcriptional profiling reveals fibrosis-relevant genes and pathways 	Expression profiling by array	4	7	3	0	1	1	1	0	0	0	BleomycinD14_vs_Ctrl
+GSE40151|||BleomycinD14_vs_Ctrl	GSE40151	Bleomycin induces molecular changes directly relevant to idiopathic pulmonary fibrosis: a model for active disease.	Expression profiling by array	16	16	6	1	1	1	1	1	1	0	BleomycinD14_vs_Ctrl

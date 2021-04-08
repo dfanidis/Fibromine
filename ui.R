@@ -1177,13 +1177,62 @@ shinyUI(dashboardPage(
 					wellPanel(
 						fluidRow(
 							column(width= 12,
-								h2("Datasets benchmarking results"),
-								h3("Coding transcriptomic datasets"),
-								DT::dataTableOutput("decorRes"),
-								h3("IPF_vs_Ctrl lung coding transcriptomic datasets"),
-								DT::dataTableOutput("decorResII"),
-								h3("BleomD14_vs_Ctrl lung coding transcriptomic datasets"),
-								DT::dataTableOutput("decorResIII")
+								h2("Datasets benchmarking"),
+								p(),
+								shinydashboard::tabBox(
+									id= "benchmarking",
+									tabPanel(title= "Benchmarking results",
+										fluidRow(
+											column(width= 12,
+												shinydashboard::tabBox(
+													tabPanel(title= "All trans. coding datasets",
+														DT::dataTableOutput("decorRes"),
+														width= 12
+													),
+													tabPanel(title= "IPF_vs_Ctrl lung coding",
+														DT::dataTableOutput("decorResII"),
+														width= 12
+													),
+													tabPanel(title= "BleomD14_vs_Ctrl lung coding",
+														DT::dataTableOutput("decorResIII"),
+														width= 12
+													),
+													width= 12
+												)
+											)
+										),
+										width= 12
+									),
+									tabPanel(title= "Benchmarking backstage",
+										fluidRow(
+											column(width= 12,
+												shinydashboard::tabBox(
+													tabPanel(title= "All trans. coding datasets",
+														includeMarkdown("./www/benchBackAllCoding.md"),
+														h4("Stars analytically"),
+														DT::dataTableOutput("benchAllCoding"),
+														width= 12
+													),
+													tabPanel(title= "IPF_vs_Ctrl lung coding",
+														includeMarkdown("./www/benchBackIPF_vs_Ctrl.md"),
+														h4("Stars analytically"),
+														DT::dataTableOutput("benchIPFCtrl"),
+														width= 12
+													),
+													tabPanel(title= "BleomD14_vs_Ctrl lung coding",
+														includeMarkdown("./www/benchBackBleomD14_vs_Ctrl.md"),
+														h4("Stars analytically"),
+														DT::dataTableOutput("benchBleomD14Ctrl"),
+														width= 12
+													),
+													width= 12
+												)
+											)
+										),
+										width= 12
+									),
+									width= 12
+								)
 							)
 						)
 					)
