@@ -2650,9 +2650,70 @@ shinyServer(function(input, output, session) {
 				"General gene information will be presented here."
 			)
 		)
-		datatable(geneInfo(), 
+		out <- geneInfo()
+
+		datatable(out, 
 			selection= "none", 
 			rownames= FALSE,
+			class= "compact",
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip',
+				columnDefs= list(
+					list(
+						className= "dt-center",
+						targets= "_all"
+					)
+				) 
+			),
+			extensions= "Responsive"
+		)		
+	})
+
+	output$geneMapSc <- DT::renderDataTable({
+		validate(
+			need(!is.null(geneVals$geneData),
+				"Active hyperlinks to map gene to single cell expression data will be presented here"
+			)
+		)
+
+		out <- geneInfo()
+		reyf_prefix <- "https://www.nupulmonary.org/resources/?ds=fig1&gene="
+		joshi_prefix <- "https://www.nupulmonary.org/resources/?ds=asbestos-4a&gene="
+
+		# Map to single cell datasets of nupulmonary
+		temp <- out[out$Biotype == "protein_coding",]
+		if (nrow(temp)) {
+			temp$sc <- temp$Code
+
+			for (i in 1:length(temp$sc)) {
+				# If human gene send to Reyfman dataset
+				temp$sc[i] <- gsub("^ENSG.*", 
+					paste0("<a href='", reyf_prefix, temp$Name[i],
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"Reyfman et al.", "</a>"
+					),
+					temp$sc[i]
+				)
+
+				# If mouse gene send to Joshi-Watanabe dataset
+				temp$sc[i] <- gsub("^ENSM.*", 
+					paste0("<a href='", joshi_prefix, temp$Name[i],
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"Joshi, Watanabe et al.", "</a>"
+					),
+					temp$sc[i]
+				)
+			}
+
+			# Format table
+			temp <- temp[, c("Name", "Code", "sc")]
+			colnames(temp)[3] <- "Single cell dataset mapping"
+		}
+
+		datatable(temp, 
+			selection= "none", 
+			rownames= FALSE,
+			escape= FALSE,
 			class= "compact",
 			options= list(
 				sDom= '<"top">lrt<"bottom">ip',

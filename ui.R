@@ -839,8 +839,19 @@ shinyUI(dashboardPage(
 					),
 					column(width=10,
 						wellPanel(
-							h3("Queried genes"),
-							DT::dataTableOutput(outputId= "geneInfo")
+							h3("General information"),
+							DT::dataTableOutput(outputId= "geneInfo"),
+							br(),
+							tipify(
+								h3("Map to single cell data",
+									shiny::icon("question-circle")
+								),
+								title= paste0("Query for one or multiple protein-coding genes and then ",
+									"use hyperlinks from the table below to map ",
+									"the queried genes in same species datasets of NUPulmonary. "
+								)
+							),
+							DT::dataTableOutput(outputId= "geneMapSc")
 						)
 					)
 				),
