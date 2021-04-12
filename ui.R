@@ -147,99 +147,124 @@ shinyUI(dashboardPage(
 							h2("Useful links"),
 							tags$hr(),
 
-							tags$a(
-								imageOutput("gene",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
-								),
-								href= "https://www.ncbi.nlm.nih.gov/gene/",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+							fluidRow(
+								column(
+									tags$a(
+										imageOutput("gene",
+											inline= TRUE
+										),
+										href= "https://www.ncbi.nlm.nih.gov/gene/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("ensembl",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
-								),
-								href= "http://www.ensembl.org/index.html",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+									tags$a(
+										imageOutput("ensembl",
+											inline= TRUE
+										),
+										href= "http://www.ensembl.org/index.html",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("uniprot",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
-								),
-								href= "https://www.uniprot.org/",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+									tags$a(
+										imageOutput("uniprot",
+											inline= TRUE
+										),
+										href= "https://www.uniprot.org/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("string",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
-								),
-								href= "https://string-db.org/",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+									width= 6,
+									# Increase padding to the right to 
+									# avoid colliding of the logo images
+									# with those in the right column
+									style= "padding-left:0px;
+										padding-top:5px;
+										padding-bottom:5px;
+										padding-right:2px;"
 
-							tags$a(
-								imageOutput("go",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
 								),
-								href= "http://geneontology.org/",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+								column(
+									tags$a(
+										imageOutput("pulmon",
+											inline= TRUE
+										),
+										href= "http://pulmondb.liigh.unam.mx/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("emouse",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
-								),
-								href= "http://www.fleming.gr/emouse/",
-								rel= "noopener noreferrer",
-								target= "_blank"
-							),
-							tags$br(),
+									tags$a(
+										imageOutput("nupulmon",
+											inline= TRUE
+										),
+										href= "https://www.nupulmonary.org/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("pulmon",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
+									tags$a(
+										imageOutput("ipfatlas",
+											inline= TRUE
+										),
+										href= "http://www.ipfcellatlas.com/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									width= 6,
+									# Increase padding to the left to 
+									# avoid colliding of the logo images
+									# with those in the left column
+									style= "padding-left:2px;
+										padding-top:5px;
+										padding-bottom:5px;
+										padding-right:0px;"
 								),
-								href= "http://pulmondb.liigh.unam.mx/",
-								rel= "noopener noreferrer",
-								target= "_blank"
+								width= 12
 							),
-							tags$br(),
+							fluidRow(
+								column(
+									tags$a(
+										imageOutput("string",
+											inline= TRUE
+										),
+										href= "https://string-db.org/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 
-							tags$a(
-								imageOutput("nupulmon",
-									width= "200px",
-									height= "70px",
-									inline= TRUE
+									tags$a(
+										imageOutput("go",
+											inline= TRUE
+										),
+										href= "http://geneontology.org/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
+									width= 6
 								),
-								href= "https://www.nupulmonary.org/",
-								rel= "noopener noreferrer",
-								target= "_blank"
+								column(
+									tags$a(
+										imageOutput("emouse",
+											inline= TRUE
+										),
+										href= "http://www.fleming.gr/emouse/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
+									width= 6
+								),
+								width= 12
 							),
 							width= 4
 						)

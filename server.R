@@ -109,7 +109,7 @@ shinyServer(function(input, output, session) {
 
 	## Render external image hyperlinks
 	output$gene <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/ncbiLogo.jpeg",
@@ -121,7 +121,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$ensembl <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/ensemblLogo.png",
@@ -133,7 +133,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$uniprot <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/uniprotLogo.png",
@@ -145,7 +145,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$string <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/stringLogo.png",
@@ -157,7 +157,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$go <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/GOLogo.png",
@@ -169,7 +169,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 	
 	output$emouse <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/emouseLogo.gif",
@@ -181,7 +181,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$pulmon <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/pulmondbLogo.png",
@@ -193,7 +193,7 @@ shinyServer(function(input, output, session) {
 	}, deleteFile= FALSE)
 
 	output$nupulmon <- renderImage({
-		width<- "200px"
+		width<- "160px"
 		height<- "70px"
 		list(
 			src = "./www/logos/nupulmonaryLogoOfMine.png",
@@ -204,6 +204,18 @@ shinyServer(function(input, output, session) {
 		)
 	}, deleteFile= FALSE)
 
+	output$ipfatlas <- renderImage({
+		width<- "160px"
+		height<- "70px"
+		list(
+			src = "./www/logos/ipfatlasLogoOfMine.png",
+			contentType = "image/png",
+			width = width,
+			height = height,
+			style="display: block; margin-left: auto; margin-right: auto;"
+		)
+	}, deleteFile= FALSE)
+	
 	# ============================================================================
 	# "Dataset explorer" tab Items
 	# ============================================================================
