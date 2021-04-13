@@ -18,7 +18,8 @@ pckgList <- c(
   "htmlwidgets", 
   "openxlsx", 
   "rjson",
-  "rintrojs"
+  "rintrojs",
+  "httr"
 )
 pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
 if(length(pckgMissing)) install.packages(pckgMissing)
@@ -403,6 +404,7 @@ shinyUI(dashboardPage(
 										fluidRow(
 											column(width=2,
 												wellPanel(
+													h5("Change DEA\nthresholds"),
 													numericInput(
 														inputId= "pvalCommonIn",
 														label= "Type a p-value",
@@ -429,6 +431,11 @@ shinyUI(dashboardPage(
 															"apply changes."
 														)
 													)
+												),
+												wellPanel(
+													h5("Pathway\nanalyses"),
+													helpText("Interrogate one/multiple datasets first."),
+													DT::dataTableOutput("pathAnal")
 												)
 											),
 											column(width=10,

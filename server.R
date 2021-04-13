@@ -24,7 +24,8 @@ pckgList <- c(
   "htmlwidgets", 
   "openxlsx", 
   "rjson",
-  "rintrojs"
+  "rintrojs",
+  "httr"
 )
 pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
 if(length(pckgMissing)) install.packages(pckgMissing)
@@ -1204,6 +1205,217 @@ shinyServer(function(input, output, session) {
 			write.xlsx(samplesStat()[input$degStats_rows_selected, ], file)
 		}
 	)
+
+	## Pathway analysis well panel=========================================================================
+
+	output$pathAnal <- DT::renderDataTable({
+		req(input$datasetsTable_rows_selected)
+		dataSum <- statSum()
+
+		# Check if non-coding dataset(-s) have been selected
+		if (!length(grep("^ENSG|^ENSM", dataSum$Code))) {
+			out <- data.frame(
+				"Analysis"= "Feature currently not-available for non-coding datasets."
+			)
+		} else {
+			geneList <- dataSum[order(abs(dataSum$log2FcAve), decreasing= TRUE),]
+			geneList <- geneList[1:500, "Name"]
+			geneList <- paste(geneList, collapse= "\n")
+
+			gseaDf <- dataSum[order(abs(dataSum$log2FcAve), decreasing= TRUE),]
+			gseaDf$log2FcAve <- abs(gseaDf$log2FcAve)
+			gseaDf <- gseaDf[1:300, c("Name", "log2FcAve")]
+			gseaDf <- apply(gseaDf, 1, function(x) {
+				paste(as.character(x), collapse="\t")
+			})
+			names(gseaDf) <- NULL
+			gseaDf <- paste(gseaDf, collapse= "\n")
+
+			# ORA/KEGG analysis - Create the url
+			ora_kegg <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "ORA",
+			        	enriched_database_category= "pathway",
+			        	enriched_database_name= "KEGG",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= geneList,
+			        	ref_set= "genome"
+			))
+
+			# ORA/GO/BP analysis - Create the url
+			ora_bp <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "ORA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Biological_Process",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= geneList,
+			        	ref_set= "genome"
+			))
+
+			# ORA/GO/MF analysis - Create the url
+			ora_mf <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "ORA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Molecular_Function",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= geneList,
+			        	ref_set= "genome"
+			))
+
+			# ORA/GO/CC analysis - Create the url
+			ora_cc <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "ORA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Cellular_Component",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= geneList,
+			        	ref_set= "genome"
+			))
+
+			# GSEA/KEGG analysis - Create the url
+			gsea_kegg <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "GSEA",
+			        	enriched_database_category= "pathway",
+			        	enriched_database_name= "KEGG",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= gseaDf,
+			        	ref_set= "genome"
+			))
+
+			# GSEA/BP analysis - Create the url
+			gsea_bp <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "GSEA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Biological_Process_noRedundant",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= gseaDf,
+			        	ref_set= "genome"
+			))
+
+			# GSEA/KEGG analysis - Create the url
+			gsea_mf <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "GSEA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Molecular_Function_noRedundant",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= gseaDf,
+			        	ref_set= "genome"
+			))
+
+			# GSEA/KEGG analysis - Create the url
+			gsea_cc <- GET(file.path("http://www.webgestalt.org/option.php"),
+			        query=list(
+			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
+							"hsapiens", "mmusculus"),
+			        	enrich_method= "GSEA",
+			        	enriched_database_category= "geneontology",
+			        	enriched_database_name= "Cellular_Component_noRedundant",
+			        	fdr_method= "BY",
+			        	sig_method= "fdr",
+			        	sig_value= "0.05",
+			        	max_num= "200",
+			        	id_type= "genesymbol",
+			        	gene_list= gseaDf,
+			        	ref_set= "genome"
+			))
+
+			# Gather result hyperlinks
+			out <- data.frame(
+				"Analysis"= c(
+					paste0("<a href='", ora_kegg$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"ORA/KEGG", "</a>"),
+					paste0("<a href='", ora_bp$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"ORA/GO/BP", "</a>"),
+					paste0("<a href='", ora_mf$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"ORA/GO/MF", "</a>"),
+					paste0("<a href='", ora_cc$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"ORA/GO/CC", "</a>"),
+					paste0("<a href='", gsea_kegg$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"GSEA/KEGG", "</a>"),
+					paste0("<a href='", gsea_bp$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"GSEA/BP", "</a>"),
+					paste0("<a href='", gsea_mf$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"GSEA/MF", "</a>"),
+					paste0("<a href='", gsea_cc$url,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"GSEA/CC", "</a>")
+				)
+			)
+		}
+
+		datatable(
+			data= out, 
+			selection= "none", 
+			rownames= FALSE,
+			escape= FALSE,
+			class= "compact", 
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip',
+				columnDefs= list(
+					list(
+						className= "dt-center",
+						targets= "_all"
+					)
+				),
+				lengthChange = FALSE
+			)		
+		)
+	})
 
 	## "Concerning datasets" tour==========================================================================
 	stepsTransConc <- reactive(
