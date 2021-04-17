@@ -169,6 +169,18 @@ shinyServer(function(input, output, session) {
 		)
 	}, deleteFile= FALSE)
 	
+	output$lungAgingAtlas <- renderImage({
+		width<- "160px"
+		height<- "70px"
+		list(
+			src = "./www/logos/lungAgingAtlasLogoOfMine.png",
+			contentType = "image/gif",
+			width = width,
+			height = height,
+			style="display: block; margin-left: auto; margin-right: auto;"
+		)
+	}, deleteFile= FALSE)
+	
 	output$emouse <- renderImage({
 		width<- "160px"
 		height<- "70px"
@@ -2900,46 +2912,63 @@ shinyServer(function(input, output, session) {
 			)
 		)
 
-		out <- geneInfo()
 		reyf_prefix <- "https://www.nupulmonary.org/resources/?ds=fig1&gene="
 		joshi_prefix <- "https://www.nupulmonary.org/resources/?ds=asbestos-4a&gene="
+		xie_prefix <- "https://www.nupulmonary.org/resources/?ds=asbestos-s4h&layout=0&gene="
 
-		# Map to single cell datasets of nupulmonary
-		temp <- out[out$Biotype == "protein_coding",]
-		if (nrow(temp)) {
-			temp$sc <- temp$Code
+		# Keep protein coding genes only
+		temp <- lapply(geneVals$geneData, function(gene) {
+			if(gene$Annotation$Biotype == "protein_coding") {
+				return(gene$Annotation)
+			} else {
+				return(NA)
+			}
+		})
+		temp[is.na(temp)] <- NULL
 
-			for (i in 1:length(temp$sc)) {
-				# If human gene send to Reyfman dataset
-				temp$sc[i] <- gsub("^ENSG.*", 
-					paste0("<a href='", reyf_prefix, temp$Name[i],
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"Reyfman et al.", "</a>"
-					),
-					temp$sc[i]
-				)
+		# Check the existence of protein coding genes and shape 
+		# links to NUPulmonary
+		if (length(temp)) {
 
-				# If mouse gene send to Joshi-Watanabe dataset
-				temp$sc[i] <- gsub("^ENSM.*", 
-					paste0("<a href='", joshi_prefix, temp$Name[i],
+			temp <- lapply(temp, function(x) {
+
+				# If mouse gene send to Joshi-Watanabe and Xie datasets
+				if(isTRUE(grepl("^ENSM", x$Code))) { 
+					# Create 2 identical rows 
+					out <- rbind(x,x)
+
+					out$sc <- "lalakis"
+					out$sc[1] <- paste0("<a href='", joshi_prefix, unique(out$Name),
 						"' rel='noopener noreferrer' target='_blank'>", 
 						"Joshi, Watanabe et al.", "</a>"
-					),
-					temp$sc[i]
-				)
-			}
+					)
+					out$sc[2] <- paste0("<a href='", xie_prefix, unique(out$Name),
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"Xie et al.", "</a>"
+					)
+				} else { # If human gene send to Reyfman dataset
+					out <- x
+					out$sc <- paste0("<a href='", reyf_prefix, out$Name,
+						"' rel='noopener noreferrer' target='_blank'>", 
+						"Reyfman et al.", "</a>"
+					)
+				}
+				return(out)
+			})
 
 			# Format table
+			temp <- do.call("rbind", temp)
 			temp <- temp[, c("Name", "Code", "sc")]
 			colnames(temp)[3] <- "Single cell dataset mapping"
 		}
 
-		datatable(temp, 
+		dtable <- datatable(temp, 
 			selection= "none", 
 			rownames= FALSE,
-			escape= FALSE,
+			escape= FALSE, 
 			class= "compact",
 			options= list(
+				rowsGroup= list(0,1),
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
 					list(
@@ -2950,6 +2979,13 @@ shinyServer(function(input, output, session) {
 			),
 			extensions= "Responsive"
 		)		
+
+		path <- "./www"
+		depend <- htmltools::htmlDependency("RowsGroup", "2.0.0",
+			path, script= "dataTables.rowsGroup.js")
+		dtable$dependencies <- c(dtable$dependencies, list(depend))
+
+		return(dtable)
 	})
 
 	## Display expressionPerGene table, helpText and download handler
@@ -4678,6 +4714,64 @@ shinyServer(function(input, output, session) {
 		)
 	})
 
+	# ============================================================================
+	# Single cell data tab
+	# ============================================================================
+	scDatasets <- reactiveValues(mainScTable= NULL)
+
+	## Shape Single cell tab's main table================================================================
+	scDatasets$mainScTable <- dbGetQuery(
+		conn= fibromine_db,
+		statement='SELECT * FROM scDatasetsDescription;'
+	)
+
+	output$scDatasetsTable <- DT::renderDataTable({
+
+		out <- scDatasets$mainScTable
+
+		## Transform GSE in url
+		out$DatasetID <- paste0("<a href='", out$DatasetURL, 
+			"' rel='noopener noreferrer' target='_blank'>",					 
+			out$DatasetID, "</a>"
+		)
+		out[out$DatasetID == "<a href='-' rel='noopener noreferrer' target='_blank'>-</a>",
+			"DatasetID"] <- "-"
+
+		## Set PMID as a url
+		out$Reference <- gsub("https://pubmed.ncbi.nlm.nih.gov/|/", "", out$ReferenceURL)
+		out$Reference <- paste0("<a href='", out$ReferenceURL, 
+			"' rel='noopener noreferrer' target='_blank'>",					 
+			out$Reference, "</a>"
+		)
+
+		## Format table
+		out <- subset(out, select= -c(ID, DatasetURL, ReferenceURL, nCells))
+		colnames(out)[c(2,6)] <- c("PMID","#Exp/#Ctrl")
+
+		## Convert to factors for easier client-side filtering of the table
+		out$Species <- as.factor(out$Species)
+		out$Tissue <- as.factor(out$Tissue)
+		out$Comparison <- as.factor(out$Comparison)
+
+		datatable(out, 
+			selection = "none", 
+			rownames= FALSE,
+			escape= FALSE, 
+			filter= "top",
+			class= "compact", 
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
+				columnDefs= list(
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				)
+			)#,	
+	  		#extensions= "Responsive",
+	  	)
+	})
+	
 	# ============================================================================
 	# Download data tab
 	# ============================================================================

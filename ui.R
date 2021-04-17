@@ -87,6 +87,7 @@ shinyUI(dashboardPage(
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star")) %>% add_class("step_4"),
+			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")),
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_5"),
 			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_6"),
@@ -254,6 +255,15 @@ shinyUI(dashboardPage(
 									width= 6
 								),
 								column(
+									tags$a(
+										imageOutput("lungAgingAtlas",
+											inline= TRUE
+										),
+										href= "http://146.107.176.18:3838/MLAA_backup/",
+										rel= "noopener noreferrer",
+										target= "_blank"
+									),
+									tags$br(),
 									tags$a(
 										imageOutput("emouse",
 											inline= TRUE
@@ -1277,6 +1287,46 @@ shinyUI(dashboardPage(
 									width= 12
 								)
 							)
+						)
+					)
+				)
+			),
+
+			# ============================================================================
+			# Single cell data tab
+			# ============================================================================
+			tabItem(tabName= "SingleCell",
+				wellPanel(
+					fluidRow(
+						tipify(
+							el= h3("IPF scRNA-seq datasets",shiny::icon("question-circle")),
+							title= "The following table summarizes the published IPF scRNA-seq datasets.",
+							placement= "bottom"
+						)
+					),
+					fluidRow(
+						p(
+							paste(
+								"Single cell RNA-seq is a quickly rising omics technology",
+								"with several scientific articles already published in the",
+								"context of IPF, enabling the study of gene expression",
+								"patterns pathological divergence at an unprecedented resolution level.",
+								"While this tab currently holds merely a catalogue of the IPF-related",
+								"scRNA-seq publications, Fibromine's Gene explorer 'Map to single cell data'",
+								"feature can map any of the queried protein coding gene(-s) to the single cell",
+								"level."
+							)
+						),
+						p(
+							paste(
+								"Important IPF and lung-related single cell online resources can be",
+								"found at Fibromine's Home tab --> 'Useful links'"
+							)
+						)
+					),
+					fluidRow(
+						column(width= 12,
+							DT::dataTableOutput("scDatasetsTable")
 						)
 					)
 				)
