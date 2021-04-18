@@ -460,6 +460,12 @@ shinyServer(function(input, output, session) {
 			c("DatasetID", "DescrContrast", "Tech", "Tissue", "Species")]
 	})
 
+	## Automatically redirect to the results tab
+	observeEvent(input$transDtstsSearch, {
+		updateTabsetPanel(session, "transDatasetsBox",
+				selected= "DEA statistics")
+	})
+
 	## Check if datasets from multiple species have been simultaneously selected
 	observeEvent({transSamplesSelected()
 		datasetVals$pval
@@ -1790,6 +1796,12 @@ shinyServer(function(input, output, session) {
 	protSamplesSelected <- eventReactive(input$protDtstsSearch, {
 		datasetVals$protTable[input$proteomicsTable_rows_selected, 
 			c("DatasetID", "DescrContrast", "Tech", "Tissue")]
+	})
+
+	## Automatically redirect to the results tab
+	observeEvent(input$protDtstsSearch, {
+		updateTabsetPanel(session, "protDatasetsBox",
+				selected= "DEA data")
 	})
 
 	## Choose all rows
