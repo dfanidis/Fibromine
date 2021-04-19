@@ -2961,6 +2961,13 @@ shinyServer(function(input, output, session) {
 			temp <- do.call("rbind", temp)
 			temp <- temp[, c("Name", "Code", "sc")]
 			colnames(temp)[3] <- "Single cell dataset mapping"
+		} else {
+			temp <- data.frame(
+				Name= character(),
+				Code= character(),
+				"sc"= character()
+			)
+			colnames(temp)[3] <- "Single cell dataset mapping"
 		}
 
 		dtable <- datatable(temp, 
