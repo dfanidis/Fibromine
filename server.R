@@ -1,9 +1,10 @@
 # Fibromine "server.R" for Shiny Server
 starsHsa <- read.delim("./www/decorationTables/gseHsa.txt")			
 starsMmu <- read.delim("./www/decorationTables/gseMmu.txt")			
-stars <- rbind(starsHsa, starsMmu)
 starsII <- read.delim("./www/decorationTables/ipf_vs_ctrl_lung_coding.txt")
 starsIII <- read.delim("./www/decorationTables/bleoD14_vs_ctrl_lung_coding.txt")
+starsIV <- read.delim("./www/decorationTables/gseNonCoding.txt")
+stars <- rbind(starsHsa, starsMmu, starsIV)
 
 # ============================================================================
 # Load required packages
@@ -236,9 +237,6 @@ shinyServer(function(input, output, session) {
 		fc=1.2, stat=NULL, plotHeat= NULL, plotVolc= NULL)
 
 	## Shape Datasets explorer main table=========================================
-	starsHsa <- read.delim("./www/decorationTables/gseHsa.txt")			
-	starsMmu <- read.delim("./www/decorationTables/gseMmu.txt")			
-	stars <- rbind(starsHsa, starsMmu)
 	datasetVals$mainTable <- merge(
 		dbGetQuery(conn= fibromine_db,
 			statement='
@@ -4485,7 +4483,95 @@ shinyServer(function(input, output, session) {
 		)
 	})
 
-	
+	# Display benchmarking results when interrogating non-coding microarray datasets
+	output$decorResIV <- DT::renderDataTable({
+
+		out <- merge(
+			dbGetQuery(conn= fibromine_db,
+				statement='
+					SELECT 
+						DatasetsDescription.DatasetID, Reference, ReferenceURL, 
+						Datasets.Tech, Datasets.Species, Tissue, DescrContrast, 
+						nExpCtrlPostCuration 
+					FROM 
+						DatasetsDescription 
+					JOIN 
+						Datasets 
+					ON 
+						DatasetsDescription.DatasetID = Datasets.DatasetID
+					WHERE 
+						Datasets.Tech != "Proteome profiling techniques"
+				;'
+			),
+			starsIV,
+			by= c("DatasetID", "DescrContrast"), all.y= TRUE
+		)
+
+		url_prefix <- "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc="
+
+		## Transform GSE in url
+		out$DatasetID <- paste0("<a href='", url_prefix, out$DatasetID, 
+			"' rel='noopener noreferrer' target='_blank'>",					 
+		out$DatasetID, "</a>")
+
+		## Set PMID as a url
+		out$Reference <- gsub("^https.*pubmed\\/", "", out$ReferenceURL)
+		out$Reference <- gsub("^https.*gov\\/", "", out$Reference)
+
+		out$Reference <- paste0("<a href='", out$ReferenceURL,
+			"' rel='noopener noreferrer' target='_blank'>", 
+			out$Reference, "</a>")
+		out[out$Reference == "<a href='-' rel='noopener noreferrer' target='_blank'>-</a>",
+			"Reference"] <- "-"
+		out[out$Reference == "<a href='https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf' rel='noopener noreferrer' target='_blank'>https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf</a>",
+			"Reference"] <- "<a href='https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf' rel='noopener noreferrer' target='_blank'>biorxiv link</a>"
+
+		## Split nExpCtrlPostCuration so as to be properly sortable on the client side
+		nSamples <- strsplit(out$nExpCtrlPostCuration, split= "/")
+		nSamples <- do.call("rbind", nSamples)
+		out$Exp <- as.integer(nSamples[,1])
+		out$Ctrl <- suppressWarnings(as.integer(nSamples[,2]))
+		# Set the "pooled" Ctrl samples of a specific dataset into 1 (as if they were 1 sample)
+		out$Ctrl[is.na(out$Ctrl)] <- 1
+
+		out <- subset(out, select= -c(ReferenceURL, nExpCtrlPostCuration))
+		out <- out[,c(1,3,2,7,4:6,8:9)]
+		colnames(out) <- c("GEO accession", "PMID", "Comparison", 
+			"Stars count", "Technology", "Species", "Tissue", 
+			"#Experimental", "#Control")
+
+		## Convert to factors for easier client-side filtering of the table
+		out$Technology <- as.factor(out$Technology)
+		out$Species <- as.factor(out$Species)
+		out$Tissue <- as.factor(out$Tissue)
+		out$Comparison <- as.factor(out$Comparison)
+
+		# Color Stars count column
+		brks <- 0:7
+		clrsPal <- colorRampPalette(c("green", "yellow", "red"))
+		clrs <- clrsPal(length(brks)+1)
+
+		datatable(out,
+			rownames= FALSE,
+			escape= FALSE, 
+			filter= "top",
+			class= "compact", 
+			width= "100%",
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip',
+				columnDefs= list(
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				),
+				scrollX= TRUE
+			)
+		)  %>% formatStyle("Stars count",
+			backgroundColor= styleInterval(brks, clrs)
+		)
+	})
+
 	# ======================================================================
 	# "Dataset explorer" --> "Benchmarking backstage" --> 
 	# "All trans. coding datasets"
@@ -4697,6 +4783,85 @@ shinyServer(function(input, output, session) {
 		## Convert to factors for easier client-side filtering of the table
 		out$ID <- as.factor(out$ID)
 		out$Technology <- as.factor(out$Technology)
+
+		datatable(out,
+			rownames= FALSE,
+			escape= FALSE, 
+			filter= "top",
+			class= "compact", 
+			width= "100%",
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip',
+				columnDefs= list(
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				),
+				scrollX= TRUE
+			)
+		)
+	})
+
+	# ======================================================================
+	# "Dataset explorer" --> "Benchmarking backstage" --> 
+	# "All non-coding datasets"
+	# ======================================================================
+	starsExtIV <- read.delim("./www/benchBackstage/nonCoding/gseNonCoding_extensive.txt")
+
+	output$benchNonCoding <- DT::renderDataTable({
+
+		out <- merge(
+			dbGetQuery(conn= fibromine_db,
+				statement='
+					SELECT 
+						DatasetsDescription.DatasetID, Reference, ReferenceURL, 
+						Datasets.Tech, Tissue, DescrContrast, 
+						nExpCtrlPostCuration 
+					FROM 
+						DatasetsDescription 
+					JOIN 
+						Datasets 
+					ON 
+						DatasetsDescription.DatasetID = Datasets.DatasetID
+					WHERE 
+						Datasets.Tech != "Proteome profiling techniques"
+				;'
+			),
+			starsExtIV,
+			by= c("DatasetID", "DescrContrast"), all.y= TRUE
+		)
+
+		url_prefix <- "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc="
+
+		## Transform GSE in url
+		out$DatasetID <- paste0("<a href='", url_prefix, out$DatasetID, 
+			"' rel='noopener noreferrer' target='_blank'>",					 
+		out$DatasetID, "</a>")
+
+		## Set PMID as a url
+		out$Reference <- gsub("^https.*pubmed\\/", "", out$ReferenceURL)
+		out$Reference <- gsub("^https.*gov\\/", "", out$Reference)
+
+		out$Reference <- paste0("<a href='", out$ReferenceURL,
+			"' rel='noopener noreferrer' target='_blank'>", 
+			out$Reference, "</a>")
+		out[out$Reference == "<a href='-' rel='noopener noreferrer' target='_blank'>-</a>",
+			"Reference"] <- "-"
+		out[out$Reference == "<a href='https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf' rel='noopener noreferrer' target='_blank'>https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf</a>",
+			"Reference"] <- "<a href='https://www.biorxiv.org/content/biorxiv/early/2019/03/23/580498.full.pdf' rel='noopener noreferrer' target='_blank'>biorxiv link</a>"
+
+		# Keep important columns
+		out <- out[,c("ID", "Reference", "Species", "Tissue", "Technology", 
+			"detectedStar", "degsStar", "ratioStar", "fcBinsStar",
+			"pvalStar", "adjpStar")]
+		colnames(out)[2] <- "PMID"
+
+		## Convert to factors for easier client-side filtering of the table
+		out$ID <- as.factor(out$ID)
+		out$Technology <- as.factor(out$Technology)
+		out$Species <- as.factor(out$Species)
+		out$Tissue <- as.factor(out$Tissue)
 
 		datatable(out,
 			rownames= FALSE,

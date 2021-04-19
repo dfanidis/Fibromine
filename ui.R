@@ -1250,6 +1250,10 @@ shinyUI(dashboardPage(
 														DT::dataTableOutput("decorResIII"),
 														width= 12
 													),
+													tabPanel(title= "All non-coding datasets",
+														DT::dataTableOutput("decorResIV"),
+														width= 12
+													),
 													width= 12
 												)
 											)
@@ -1276,6 +1280,12 @@ shinyUI(dashboardPage(
 														includeMarkdown("./www/benchBackBleomD14_vs_Ctrl.md"),
 														h4("Stars analytically"),
 														DT::dataTableOutput("benchBleomD14Ctrl"),
+														width= 12
+													),
+													tabPanel(title= "All non-coding datasets",
+														includeMarkdown("./www/benchBackNonCoding.md"),
+														h4("Stars analytically"),
+														DT::dataTableOutput("benchNonCoding"),
 														width= 12
 													),
 													width= 12

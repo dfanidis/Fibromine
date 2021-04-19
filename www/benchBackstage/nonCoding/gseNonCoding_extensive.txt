@@ -1,0 +1,5 @@
+ID	DatasetID	Ref	Species	Technology	#Experimental	#Control	Stars count	detectedStar	degsStar	ratioStar	fcBinsStar	pvalStar	adjpStar	DescrContrast
+GSE13316|||IPF_vs_Ctrl	GSE13316	Inhibition and role of let-7d in idiopathic pulmonary fibrosis.	Homo sapiens	Non-coding RNA profiling by array	7	8	2	0	1	0	1	0	0	IPF_vs_Ctrl
+GSE21394|||IPF_vs_Ctrl	GSE21394	Systems biology of interstitial lung diseases: integration of mRNA and microRNA expression changes.	Homo sapiens	Non-coding RNA profiling by array	6	6	2	1	0	0	1	0	0	IPF_vs_Ctrl
+GSE27156|||Ctrl/TGFb_vs_Ctrl	GSE27156	Profibrotic role of miR-154 in pulmonary fibrosis.	Homo sapiens	Non-coding RNA profiling by array	6	5	6	1	1	1	1	1	1	Ctrl/TGFb_vs_Ctrl
+GSE27430|||IPF_vs_Ctrl	GSE27430	Profibrotic role of miR-154 in pulmonary fibrosis.	Homo sapiens	Non-coding RNA profiling by array	7	9	5	1	1	1	0	1	1	IPF_vs_Ctrl

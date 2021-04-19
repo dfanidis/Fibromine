@@ -1,0 +1,5 @@
+DatasetID	DescrContrast	Stars count
+GSE13316	IPF_vs_Ctrl	2
+GSE21394	IPF_vs_Ctrl	2
+GSE27156	Ctrl/TGFb_vs_Ctrl	6
+GSE27430	IPF_vs_Ctrl	5
