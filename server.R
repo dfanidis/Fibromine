@@ -60,7 +60,7 @@ shinyServer(function(input, output, session) {
 	## Set the tour
 	steps <- reactive(
         data.frame(
-            element= paste0(".step_", 1:8),
+            element= paste0(".step_", 1:10),
             intro= c(
                  paste("<b>Dataset explorer</b> provides a quick way to explore",
                 	"transcriptomic and proteomic datasets in an independent",
@@ -80,12 +80,18 @@ shinyServer(function(input, output, session) {
                 	"benchmarking process implemented into Fibromine: the <b>more stars</b> a dataset",
                 	'has been decorated with, the <b>more "trustworthy" it is.</b><br/>'
                 ),
+                paste("<b>Single cell data</b> tab summarizes all single cell datasets published",
+                	"thus far in the context of IPF pathology."
+                ),
                 paste("For anyone that wants to perform his/her own analysis, <b>Download Data</b>",
                 	"feature enables the acquisition of normalized gene expression data per dataset.",
                 	"Proteomics data per dataset are also available for download."
                 ),
-                paste("Detailed info about Fibromine explorers and their backgroung computing can",
+                paste("Detailed info about Fibromine explorers and their back-end processing can",
                 	"be found in the <b>Docs</b> section"
+                ),
+				paste("<b>How to</b> tab holds a visual guide for almost all Fibromine's features and analysis",
+                	"results. Check it out!"
                 ),
                 paste("Designed and implemented by <b>Dionysios Fanidis</b>.<br />",
                 	"Supervised by <b>Panagiotis Moulos</b> & <b>Vassilis Aidinis</b>"
@@ -93,7 +99,7 @@ shinyServer(function(input, output, session) {
                 paste("<b>Feedback makes us better!</b> Please, report any issue or new dataset",
                 	"not already included into Fibromine on our GitHub repository.")
             ),
-            position= rep("auto", 8)
+            position= rep("auto", 10)
         )
     )
 
@@ -948,7 +954,7 @@ shinyServer(function(input, output, session) {
 	## Transcriptomic datasets -> Datasets statistics tour===============================================
 	stepsTransStats <- reactive(
 	    data.frame(
-	        element= c(".step1_transStats", ".step2_transStats"),
+	        element= c(".step1_transStats", ".step2_transStats", ".step3_transStats"),
 	        intro= c(
 	            paste("The <b>results</b> of datasets exploration/integration are presented here.<br>",
 	            	"<b>Transcriptomics summary</b> tab displays those differentially expressed genes",
@@ -963,9 +969,12 @@ shinyServer(function(input, output, session) {
 	            	"<b>0.05 and 1.2 for the p-value and |FC|</b> respectively must be fulfilled.",
 	            	"The user can <b>choose</b> his/her own thresholds from the boxes above and then",
 	            	"press this button to filter the results."
+	            ),
+	            paste("Follow any of the here presented <b>hyperlinks</b> to perform <b>pathway analysis</b>",
+	            	"using the <b>WebGestalt</b> online tool."
 	            )
 	        ),
-	        position= c("auto","left")
+	        position= rep("auto", 3)
 	    )
 	)
 

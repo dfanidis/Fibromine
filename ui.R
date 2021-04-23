@@ -87,14 +87,14 @@ shinyUI(dashboardPage(
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star")) %>% add_class("step_4"),
-			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")),
+			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_5"),
 
-			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_5"),
-			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_6"),
-			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")),
+			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_6"),
+			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_7"),
+			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")) %>% add_class("step_8"),
 
-			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/aidinis-lab") %>% add_class("step_7"),
-			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_8")
+			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/aidinis-lab") %>% add_class("step_9"),
+			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_10")
 		)
 	),
 	dashboardBody(
@@ -432,7 +432,7 @@ shinyUI(dashboardPage(
 														label= "Filter",
 														style= "background-color: #d42132; color: white;
 															border-color: #d42132;"
-													) %>% add_class("step2_transStats"),
+													),
 													bsTooltip(
 														id= "filterCommon",
 														title= paste0(
@@ -441,12 +441,12 @@ shinyUI(dashboardPage(
 															"apply changes."
 														)
 													)
-												),
+												) %>% add_class("step2_transStats"),
 												wellPanel(
 													h5("Pathway\nanalyses"),
 													helpText("Interrogate one/multiple datasets first."),
 													DT::dataTableOutput("pathAnal")
-												)
+												) %>% add_class("step3_transStats")
 											),
 											column(width=10,
 												shinydashboard::tabBox(
