@@ -26,7 +26,8 @@ pckgList <- c(
   "openxlsx", 
   "rjson",
   "rintrojs",
-  "httr"
+  "httr",
+  "enrichR"
 )
 pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
 if(length(pckgMissing)) install.packages(pckgMissing)
@@ -240,7 +241,7 @@ shinyServer(function(input, output, session) {
 	# "Dataset explorer" tab Items
 	# ============================================================================
 	datasetVals <- reactiveValues(mainTable=NULL, protTable= NULL, pval=0.05, 
-		fc=1.2, stat=NULL, plotHeat= NULL, plotVolc= NULL)
+		fc=1.2, hidePA = NULL, stat=NULL, plotHeat= NULL, plotVolc= NULL)
 
 	## Shape Datasets explorer main table=========================================
 	datasetVals$mainTable <- merge(
@@ -465,9 +466,11 @@ shinyServer(function(input, output, session) {
 	})
 
 	## Automatically redirect to the results tab
+	## and remove any previous pathway analysis table
 	observeEvent(input$transDtstsSearch, {
 		updateTabsetPanel(session, "transDatasetsBox",
 				selected= "DEA statistics")
+		datasetVals$hidePA <- TRUE
 	})
 
 	## Check if datasets from multiple species have been simultaneously selected
@@ -1231,192 +1234,170 @@ shinyServer(function(input, output, session) {
 		}
 	)
 
-	## Pathway analysis well panel=========================================================================
+	## Pathway analysis ===================================================================================
 
-	output$pathAnal <- DT::renderDataTable({
-		req(input$datasetsTable_rows_selected)
-		dataSum <- statSum()
+	## Enable the display of the new pathway analysis results
+	observeEvent(input$paRun,
+		datasetVals$hidePA <- FALSE
+	)
 
-		# Check if non-coding dataset(-s) have been selected
-		if (!length(grep("^ENSG|^ENSM", dataSum$Code))) {
-			out <- data.frame(
-				"Analysis"= "Feature currently not-available for non-coding datasets."
-			)
+	## Perform the analysis
+	paRes <- eventReactive({input$paRun
+		datasetVals$hidePA
+		}, {
+		req(statSum())
+
+		## Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Fetching data", value = 0)
+
+		## Remove the table if display is disabled
+		## (e.g. during a new datasets integration) 
+		if (isTRUE(datasetVals$hidePA))  {
+			return(NULL)
 		} else {
-			geneList <- dataSum[order(abs(dataSum$log2FcAve), decreasing= TRUE),]
-			geneList <- geneList[1:500, "Name"]
-			geneList <- paste(geneList, collapse= "\n")
+			## Data
+			data <- statSum()
 
-			gseaDf <- dataSum[order(abs(dataSum$log2FcAve), decreasing= TRUE),]
-			gseaDf <- gseaDf[1:300, c("Name", "log2FcAve")]
-			gseaDf <- apply(gseaDf, 1, function(x) {
-				paste(as.character(x), collapse="\t")
-			})
-			names(gseaDf) <- NULL
-			gseaDf <- paste(gseaDf, collapse= "\n")
-
-			# ORA/KEGG analysis - Create the url
-			ora_kegg <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "ORA",
-			        	enriched_database_category= "pathway",
-			        	enriched_database_name= "KEGG",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= geneList,
-			        	ref_set= "genome"
-			))
-
-			# ORA/GO/BP analysis - Create the url
-			ora_bp <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "ORA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Biological_Process",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= geneList,
-			        	ref_set= "genome"
-			))
-
-			# ORA/GO/MF analysis - Create the url
-			ora_mf <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "ORA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Molecular_Function",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= geneList,
-			        	ref_set= "genome"
-			))
-
-			# ORA/GO/CC analysis - Create the url
-			ora_cc <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "ORA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Cellular_Component",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= geneList,
-			        	ref_set= "genome"
-			))
-
-			# GSEA/KEGG analysis - Create the url
-			gsea_kegg <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "GSEA",
-			        	enriched_database_category= "pathway",
-			        	enriched_database_name= "KEGG",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= gseaDf,
-			        	ref_set= "genome"
-			))
-
-			# GSEA/BP analysis - Create the url
-			gsea_bp <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "GSEA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Biological_Process_noRedundant",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= gseaDf,
-			        	ref_set= "genome"
-			))
-
-			# GSEA/KEGG analysis - Create the url
-			gsea_mf <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "GSEA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Molecular_Function_noRedundant",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= gseaDf,
-			        	ref_set= "genome"
-			))
-
-			# GSEA/KEGG analysis - Create the url
-			gsea_cc <- GET(file.path("http://www.webgestalt.org/option.php"),
-			        query=list(
-			        	organism= ifelse(any(grep("ENSG", dataSum$Code)), 
-							"hsapiens", "mmusculus"),
-			        	enrich_method= "GSEA",
-			        	enriched_database_category= "geneontology",
-			        	enriched_database_name= "Cellular_Component_noRedundant",
-			        	fdr_method= "BY",
-			        	sig_method= "top",
-			        	max_num= "200",
-			        	id_type= "genesymbol",
-			        	gene_list= gseaDf,
-			        	ref_set= "genome"
-			))
-
-			# Gather result hyperlinks
-			out <- data.frame(
-				"Analysis"= c(
-					paste0("<a href='", ora_kegg$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"ORA/KEGG", "</a>"),
-					paste0("<a href='", ora_bp$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"ORA/GO/BP", "</a>"),
-					paste0("<a href='", ora_mf$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"ORA/GO/MF", "</a>"),
-					paste0("<a href='", ora_cc$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"ORA/GO/CC", "</a>"),
-					paste0("<a href='", gsea_kegg$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"GSEA/KEGG", "</a>"),
-					paste0("<a href='", gsea_bp$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"GSEA/BP", "</a>"),
-					paste0("<a href='", gsea_mf$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"GSEA/MF", "</a>"),
-					paste0("<a href='", gsea_cc$url,
-						"' rel='noopener noreferrer' target='_blank'>", 
-						"GSEA/CC", "</a>")
+			## Choose enricr site and dbs
+			setEnrichrSite("Enrichr")
+			ifelse(
+				any(grep("^ENSG", data$Code)),
+				dbs <- c(
+					"GO_Biological_Process_2018", 
+					"GO_Cellular_Component_2018", 
+					"GO_Molecular_Function_2018",
+					"KEGG_2021_Human",
+					"COVID-19_Related_Gene_Sets"
+				),
+				dbs <- c(
+					"GO_Biological_Process_2018", 
+					"GO_Cellular_Component_2018", 
+					"GO_Molecular_Function_2018",
+					"KEGG_2019_Mouse"
 				)
 			)
+
+			progress$inc(0.15)			
+
+			## Check if there are no protein_coding genes
+			if (any(grep("^ENS", data$Code))) {
+
+				## Perform the analysis according to the chosen PA method?
+				paChoice <- input$paChoice
+				paRes <- switch(paChoice,
+					"ora" = {
+						# Separate up from down regulated genes
+						up <- as.character(data[data$log2FcAve > 0, "Name"])
+						dw <- as.character(data[data$log2FcAve < 0, "Name"])
+
+						# Remove any entries not having a gene symbol
+						up <- up[which(up != "-")]
+						dw <- dw[which(dw != "-")]
+
+						# Perform the analysis
+						progress$set(message = "Analysis step 1/2", value = 0.20)
+						enrUp <- enrichr(genes = up, databases = dbs)
+						progress$inc(0.2)			
+
+						progress$set(message = "Analysis step 2/2", value = 0.55)
+						enrDw <- enrichr(genes = dw, databases = dbs)
+						progress$set(message = "Formating results", value = 0.75)
+
+						# Keep the significantly enriched terms
+						enrUp <- lapply(enrUp, function(x){
+							out <- x[x$Adjusted.P.value < 0.05,]
+						})
+						enrDw <- lapply(enrDw, function(x){
+							out <- x[x$Adjusted.P.value < 0.05,]
+						})
+
+						# As a data.frame
+						enrUp <- do.call("rbind", enrUp)
+						enrDw <- do.call("rbind", enrDw)
+
+						enrUp$Database <- rownames(enrUp)
+						enrDw$Database <- rownames(enrDw)
+
+						enrUp$Database <- gsub("\\..*$", "", enrUp$Database)
+						enrDw$Database <- gsub("\\..*$", "", enrDw$Database)
+
+						enrUp$inputList <- "Up DEGs"
+						enrDw$inputList <- "Down DEGs"
+
+						out <- as.data.frame(rbind(enrUp, enrDw))
+
+						for (i in 1:length(out$Database)) {
+							if(out$Database[i] == "GO_Biological_Process_2018") {			# GO categories
+								out$Database[i] <- "BP"
+							} else if (out$Database[i] == "GO_Cellular_Component_2018") {
+								out$Database[i] <- "CC"
+							} else if (out$Database[i] == "GO_Molecular_Function_2018") {
+								out$Database[i] <- "MF"
+							} else if (out$Database[i] == "KEGG_2021_Human") {				# KEGG categories
+								out$Database[i] <- "KEGG"
+							} else if (out$Database[i] == "KEGG_2019_Mouse") {	
+								out$Database[i] <- "KEGG"
+							} else if (out$Database[i] == "COVID-19_Related_Gene_Sets") {	# COVID-19 gene set
+								out$Database[i] <- "CoV-19"
+							}
+						}
+
+						# enrichR capitalizes Mmu gene names as if they were human genes
+						# If input gene list is of murine origin, format properly gene names in the output
+						if (any(grep("^ENSMUS", data$Code))) {
+							out$Genes <- stringr::str_to_title(out$Genes)
+						}
+
+						# Return the results
+						out
+					}#,
+					# "preRnk" = {
+					# 	# Return the results
+					# 	"lalakis"
+					# }
+				)
+				progress$inc(0.25)			
+			} else {
+				paRes <- data.frame(
+					Database = as.character(),
+					Term = as.character(),
+					Overlap = as.character(),
+					"Adjusted P value" = as.character(),
+					"Odds Ratio" = as.character(),
+					"Combined Score" = as.character()
+				)
+			}
+			return(paRes)
 		}
+	})
+
+	output$paResTable <- DT::renderDataTable({
+		req(paRes())
+		req(input$datasetsTable_rows_selected) ## "Hide" table if no rows are selected 
+
+		## Non-protein coding genes only?
+		validate(
+			need(!nrow(paRes()) == 0,
+				"Currently Fibromine cannot perform pathway analysis using only non-protein coding genes."
+			)
+		)
+
+		out <- paRes()
+
+		# Format the table
+		out <- select(out, select = -c("P.value", "Old.P.value", "Old.Adjusted.P.value",
+			"Genes"))
+		colnames(out) <- gsub("\\.", " ", colnames(out))
+		out$Database <- as.factor(out$Database)
+		out <- out[,c("Database", "Term", "Overlap", "Adjusted P value", "Odds Ratio",
+			"Combined Score", "inputList")]
 
 		datatable(
 			data= out, 
 			selection= "none", 
+			filter = "top",
 			rownames= FALSE,
 			escape= FALSE,
 			class= "compact", 
@@ -1424,14 +1405,34 @@ shinyServer(function(input, output, session) {
 				sDom= '<"top">lrt<"bottom">ip',
 				columnDefs= list(
 					list(
-						className= "dt-center",
-						targets= "_all"
+						targets = 6, 
+						visible = FALSE
+					),
+					list(
+						className = "dt-center",
+						targets = "_all"
 					)
 				),
 				lengthChange = FALSE
 			)		
+		) %>% formatStyle("Term", "inputList",
+			backgroundColor= styleEqual("Up DEGs", "#ff8e8e")
+		) %>% formatStyle("Term", "inputList",
+			backgroundColor= styleEqual("Down DEGs", "#8eff8e")
+		) %>% formatRound(c("Adjusted P value", "Odds Ratio", "Combined Score"),
+			digits = 3
 		)
 	})
+
+	## Download handler
+	output$paResDown <- downloadHandler(
+		filename= function() {
+			paste0(input$paChoice, "_", Sys.Date(), ".xlsx")
+		},
+		content= function(file) {
+			write.xlsx(paRes(), file)
+		}
+	)
 
 	## "Concerning datasets" tour==========================================================================
 	stepsTransConc <- reactive(

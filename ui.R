@@ -19,7 +19,8 @@ pckgList <- c(
   "openxlsx", 
   "rjson",
   "rintrojs",
-  "httr"
+  "httr",
+  "enrichR"
 )
 pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
 if(length(pckgMissing)) install.packages(pckgMissing)
@@ -445,7 +446,25 @@ shinyUI(dashboardPage(
 												wellPanel(
 													h5("Pathway\nanalyses"),
 													helpText("Interrogate one/multiple datasets first."),
-													DT::dataTableOutput("pathAnal")
+													radioButtons(
+														inputId= "paChoice",
+														label= "Choose a pathway analysis method",
+														choices= c(
+															"ORA" = "ora"#,
+															# "Pre-ranked GSEA" = "preRnk"
+														)
+													),
+													actionButton(
+														inputId= "paRun",
+														label="Go",
+														icon= shiny::icon("cog"),
+														style="background-color: #d42132; color: white;
+															border-color: #d42132;"
+													),
+													helpText(paste("Note: Filter the 'Database' column of the 'Pathway analysis results'",
+														"table to interrogate enrichment of terms from different databases",
+														"including a COVID-19 gene set(!).")
+													)
 												) %>% add_class("step3_transStats")
 											),
 											column(width=10,
@@ -533,7 +552,25 @@ shinyUI(dashboardPage(
 														)
 													),
 													width= 12
-												) %>% add_class("step1_transStats") # Close "degStatBox"
+												) %>% add_class("step1_transStats"), # Close "degStatBox"
+												shinydashboard::tabBox(
+													id= "paResBox",
+													tabPanel("Pathway analysis results",
+														DT::dataTableOutput("paResTable",
+															) %>% withSpinner(color="#008d4c"),
+														downloadButton(outputId= "paResDown",
+															label="Download results .xlsx",
+															style= "background-color: #d42132; color: white;
+																border-color: #d42132;"
+														),
+														bsTooltip(
+															id= "paResDown", 
+															title= "Download the full PA report",
+															placement= "top"
+														)
+													),
+													width = 12
+												) # Close "paResBox"
 											)
 										),
 										width= 12
