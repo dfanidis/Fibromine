@@ -465,15 +465,15 @@ shinyServer(function(input, output, session) {
 			c("DatasetID", "DescrContrast", "Tech", "Tissue", "Species")]
 	})
 
-	## Automatically redirect to the results tab
-	## and remove any previous pathway analysis table
+	## Automatically remove any previous pathway analysis table
+	## once a new search has been initiated
 	observeEvent(input$transDtstsSearch, {
-		updateTabsetPanel(session, "transDatasetsBox",
-				selected= "DEA statistics")
 		datasetVals$hidePA <- TRUE
 	})
 
 	## Check if datasets from multiple species have been simultaneously selected
+	## - if yes warn and reset selection
+	## - if no redirect to the "DEA statistics" panel to show analysis
 	observeEvent({transSamplesSelected()
 		datasetVals$pval
 		datasetVals$fc
@@ -492,7 +492,10 @@ shinyServer(function(input, output, session) {
 				)
 				showModal(modal)
 			} else {
-				return()
+				# Redirect to "DEA statistics" panel
+				updateTabsetPanel(session, "transDatasetsBox",
+					selected= "DEA statistics"
+				)
 			}
 	})
 
