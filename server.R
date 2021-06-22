@@ -421,15 +421,15 @@ shinyServer(function(input, output, session) {
 	            	"transcriptomic and proteomic datasets in an independent",
 	            	"or an integrated fashion."
 	            ),
-				paste("All Fibromine <b>transcriptomic datasets</b> can be viewed",
-					"in the following table. To explore any of them, click on", 
-					"the respective <b>table row(-s)</b> and ..."
-				),
-				paste("then press <b>this</b> button.<br>",
-					"Dataset(-s) exploration <b>results</b> are presented in the <b>second tab</b>.",
-					"Selection of a <b>single</b> dataset will lead to its simple <b>exploration</b>,",
-					"while selection of <b>multiple</b> datasets to the integration of their data."
-				),
+							paste("All Fibromine <b>transcriptomic datasets</b> can be viewed",
+								"in the following table. To explore any of them, click on", 
+								"the respective <b>table row(-s)</b> and ..."
+							),
+							paste("then press <b>this</b> button.<br>",
+								"Dataset(-s) exploration <b>results</b> are presented in the <b>second tab</b>.",
+								"Selection of a <b>single</b> dataset will lead to its simple <b>exploration</b>,",
+								"while selection of <b>multiple</b> datasets to the integration of their data."
+							),
 	            paste("When a <b>new search</b> is required, it is <b>advised</b>",
 	            	"to <b>un-check</b> the previously selected datasets using",
 	            	"<b>this button. Manually</b> de-selecting each dataset is", 
@@ -1738,26 +1738,32 @@ shinyServer(function(input, output, session) {
 
 	## Summary page tour
 	stepsProtDat <- reactive(
-	    data.frame(
-	        element= c(".step1_protDat", ".step2_protDat"),
-	        intro= c(
-	            paste("All Fibromine <b>proteomic datasets</b> can be viewed",
-	            	"in the following table. To explore any of them, click on", 
-	            	"the respective <b>table row(-s)</b> and then press the <b>'Search'</b>", 
-	            	"button bellow.<br>",
-	            	"Dataset(-s) exploration results are presented in the <b>second tab</b>.",
-	            	"Selection of a <b>single</b> dataset will lead to its simple <b>exploration</b>,",
-	            	"while selection of <b>multiple</b> datasets to the integration of their data."
-	            ),
-	            paste("When a <b>new search</b> is required, it is <b>advised</b>",
-	            	"to <b>un-check</b> the previously selected datasets using",
-	            	"<b>this button. Manually</b> de-selecting each dataset is", 
-	            	"possible, but according to our experience is also an",
-	            	"<b>error prone</b> process."
-	            )
-	        ),
-	        position= c("top", "bottom-left-aligned")
-	    )
+    data.frame(
+        element= c(".step_1", ".step1_protDat", ".step2_protDat", ".step3_protDat"),
+        intro= c(
+        	paste("<b>Dataset explorer</b> provides a quick way to explore",
+            	"transcriptomic and proteomic datasets in an independent",
+            	"or an integrated fashion."
+            ),
+            paste("All Fibromine <b>proteomic datasets</b> can be viewed",
+            	"in the following table. To explore any of them, click on", 
+            	"the respective <b>table row(-s)</b> and ..."
+            ),
+            paste(
+            	"then press <b>this</b> button.<br>", 
+            	"Dataset(-s) exploration results are presented in the <b>second tab</b>.",
+            	"Selection of a <b>single</b> dataset will lead to its simple <b>exploration</b>,",
+            	"while selection of <b>multiple</b> datasets to the integration of their data."
+            ),
+            paste("When a <b>new search</b> is required, it is <b>advised</b>",
+            	"to <b>un-check</b> the previously selected datasets using",
+            	"<b>this button. Manually</b> de-selecting each dataset is", 
+            	"possible, but according to our experience is also an",
+            	"<b>error prone</b> process."
+            )
+        ),
+        position= c("top", "bottom-left-aligned", rep("auto", 2))
+    )
 	)
 
 	observeEvent(input$introProtDat,

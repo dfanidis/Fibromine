@@ -84,7 +84,10 @@ shinyUI(dashboardPage(
 			## menuItems
 			menuItem("Home", tabName= "Home", icon= shiny::icon("home")),
 
-			menuItem("Dataset explorer", tabName= "ByDataset", icon= shiny::icon("database")) %>% add_class("step_1"),
+			menuItem("Dataset explorer", tabName= "ByDataset", icon= shiny::icon("database"),
+				menuItem("Transcriptomics datasets", tabName = "ByTransDataset"),
+				menuItem("Proteomic datasets", tabName = "ByProtDataset")
+			) %>% add_class("step_1"),
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star")) %>% add_class("step_4"),
@@ -287,570 +290,571 @@ shinyUI(dashboardPage(
 			# ============================================================================
 			# Dataset explorer tab
 			# ============================================================================
-			tabItem(tabName= "ByDataset",
+
+			# Transcriptomic datasets tabItem
+			tabItem(tabName= "ByTransDataset",
 				fluidRow(
 					includeCSS("./www/styles.css"),
 					useShinyjs(),
+					fluidRow(
+						h3("Transcriptomic datasets explorer") %>% add_class("step1_trans"),
+					),
+					fluidRow(
+						column(width=6, align= "center",
+							actionButton(
+								inputId= "introTrans",
+								label= "About",
+								icon= shiny::icon("info-circle"), 
+								style= "background-color: #008d4c; color: white;
+									border-color: #008d4c;"
+							),
+							bsTooltip(
+								id= "introTrans",
+								title= paste0("Info about exploring the transcriptomic datasets"),
+								placement= "bottom"
+							),
+							offset= 3
+						)
+					),
 					shinydashboard::tabBox(
-						id= "datasetsBox",
-						tabPanel(title= "Transcriptomic Datasets",
+						id= "transDatasetsBox",
+						tabPanel(title= "Datasets",
 							fluidRow(
-								shinydashboard::tabBox(
-									id= "transDatasetsBox",
-									tabPanel(title= "Datasets",
-										fluidRow(
-											tipify(
-												el= h3("Fibromine transcriptomic datasets",shiny::icon("question-circle")) %>% add_class("step1_trans"),
-												title= paste0("Click one or multiple rows (they will turn blue) ",
-													"to choose a dataset(-s) and then press the Search button ",
-													"to explore. Results are presented at the next 2 tabs of the explorer. ",
-													"Use the GEO accession, Reference and Platform ",
-													"column hyperlinks for more information about a dataset."
-												),
-												placement= "bottom"
-											)
+								tipify(
+									el= h3("Datasets table",shiny::icon("question-circle")) %>% add_class("step1_trans"),
+									title= paste0("Click one or multiple rows (they will turn blue) ",
+										"to choose a dataset(-s) and then press the Search button ",
+										"to explore. Results are presented at the next 2 tabs of the explorer. ",
+										"Use the GEO accession, Reference and Platform ",
+										"column hyperlinks for more information about a dataset."
+									),
+									placement= "bottom"
+								)
+							),
+							fluidRow(
+								column(width= 4,
+									actionButton(
+										inputId= "transDtstsSearch",
+										label= "Search",
+										icon= shiny::icon("search"),
+										style="background-color: #d42132; color: white;
+											border-color: #d42132;"
+									) %>% add_class("step2_trans"),
+									bsTooltip(
+										id= "transDtstsSearch",
+										title= paste0("Choose one or multiple datasets from ", 
+											"the table below and then press search. ",
+											"Results are presented at the next 2 tabs of the explorer."	
 										),
-										fluidRow(
-											column(width=6, align= "center",
-												actionButton(
-													inputId= "introTrans",
-													label= "About",
-													icon= shiny::icon("info-circle"), 
-													style= "background-color: #008d4c; color: white;
-														border-color: #008d4c;"
-												),
-												bsTooltip(
-													id= "introTrans",
-													title= paste0("Info about exploring the transcriptomic datasets"),
-													placement= "bottom"
-												),
-												offset= 3
-											)
+										placement="bottom"
+									),
+									actionButton(
+										inputId= "clearTransDtstsSearch", 
+										label= "Reset", 
+										icon= shiny::icon("refresh"), 
+										style= " background-color: #008d4c; color: white;
+											border-color: #008d4c"
+									) %>% add_class("step3_trans"),
+									bsTooltip(
+										id= "clearTransDtstsSearch",
+										title= "Clear dataset selection.",
+										placement="bottom"
+									),
+									actionButton(
+										inputId= "selectTransAll",
+										label= "Select all",
+										icon= shiny::icon("check"),
+										style="background-color: #d42132; color: white;
+											border-color: #d42132;"
+									),
+									bsTooltip(
+										id= "selectTransAll",
+										title= paste0("Select all table rows (based on current ",
+											"used filters). To select specific datasets ",
+											"click the respective table row."
 										),
-										fluidRow(
-											column(width= 4,
-												actionButton(
-													inputId= "transDtstsSearch",
-													label= "Search",
-													icon= shiny::icon("search"),
-													style="background-color: #d42132; color: white;
-														border-color: #d42132;"
-												) %>% add_class("step2_trans"),
-												bsTooltip(
-													id= "transDtstsSearch",
-													title= paste0("Choose one or multiple datasets from ", 
-														"the table below and then press search. ",
-														"Results are presented at the next 2 tabs of the explorer."	
-													),
-													placement="bottom"
-												),
-												actionButton(
-													inputId= "clearTransDtstsSearch", 
-													label= "Reset", 
-													icon= shiny::icon("refresh"), 
-													style= " background-color: #008d4c; color: white;
-														border-color: #008d4c"
-												) %>% add_class("step3_trans"),
-												bsTooltip(
-													id= "clearTransDtstsSearch",
-													title= "Clear dataset selection.",
-													placement="bottom"
-												),
-												actionButton(
-													inputId= "selectTransAll",
-													label= "Select all",
-													icon= shiny::icon("check"),
-													style="background-color: #d42132; color: white;
-														border-color: #d42132;"
-												),
-												bsTooltip(
-													id= "selectTransAll",
-													title= paste0("Select all table rows (based on current ",
-														"used filters). To select specific datasets ",
-														"click the respective table row."
-													),
-													placement= "top"
-												),
-												offset= 8
-											)
-										),
-										fluidRow(
-											column(width= 12,
-												DT::dataTableOutput("datasetsTable")
-											)
-										),
-										width= 12
-									), # Close "Datasets" tab
-									tabPanel(title= "DEA statistics",
-										fluidRow(
-											column(width=12, 
-												tipify(
-													h3("Common DEGs and DEPs",
-														shiny::icon("question-circle")
-													),
-													title= paste0("Common DEGs and respective DEPS across selected ",
-														"datasets using p-value and FC thresholds ",
-														"of 0.05 and 1.2 respectively."
-													)
-												)
-											)
-										),
-										fluidRow(
-											column(width=6, align= "center",
-												actionButton(
-													inputId= "introTransStats",
-													label= "About",
-													icon= shiny::icon("info-circle"), 
-													style= "background-color: #008d4c; color: white;
-														border-color: #008d4c;"
-												),
-												bsTooltip(
-													id= "introTransStats",
-													title= paste0("Info about exploration/integration results"),
-													placement= "bottom"
-												),
-												offset= 3
-											)
-										),
-										fluidRow(
-											column(width=2,
-												wellPanel(
-													h5("Change DEA\nthresholds"),
-													numericInput(
-														inputId= "pvalCommonIn",
-														label= "Type a p-value",
-														value= 0.05,
-														step= 0.01
-													),
-													numericInput(
-														inputId= "fcCommonIn",
-														label= "Type a Fold change",
-														value= 1.2,
-														step= 0.01
-													),
-													actionButton(
-														inputId= "filterCommon",
-														label= "Filter",
-														icon = shiny::icon("filter"),
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "filterCommon",
-														title= paste0(
-															"Use the above control panel to change ",
-															"thresholds and then press this button to ",
-															"apply changes."
-														)
-													)
-												) %>% add_class("step2_transStats"),
-												wellPanel(
-													h5("Pathway\nanalyses"),
-													helpText("Interrogate one/multiple datasets first."),
-													radioButtons(
-														inputId= "paChoice",
-														label= "Choose a pathway analysis method",
-														choices= c(
-															"ORA" = "ora"#,
-															# "Pre-ranked GSEA" = "preRnk"
-														)
-													),
-													actionButton(
-														inputId= "paRun",
-														label="Go",
-														icon= shiny::icon("cog"),
-														style="background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													helpText(paste("Note: Filter the 'Database' column of the 'Pathway analysis results'",
-														"table to interrogate enrichment of terms from different databases",
-														"including a COVID-19 gene set(!).")
-													)
-												) %>% add_class("step3_transStats")
-											),
-											column(width=10,
-												shinydashboard::tabBox(
-													id= "degStatBox",
-													tabPanel("Transcriptomics summary",
-														DT::dataTableOutput("degStatsSum",
-															) %>% withSpinner(color="#008d4c"),
-
-														downloadButton(outputId= "degSumAll",
-															label="Download table .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "degSumAll", 
-															title= "Download the whole table.",
-															placement= "top"
-														),
-
-														downloadButton(outputId= "degSumFiltered",
-															label="Download filtered data .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "degSumFiltered", 
-															title= paste0("Filter any column of the table and then press ", 
-																"this button to download the filtered data."),
-															placement= "top"
-														)
-													),
-													tabPanel("Proteomics summary",
-														DT::dataTableOutput("depSum",
-															) %>% withSpinner(color="#008d4c"),
-
-														downloadButton(outputId= "depSumDw",
-															label="Download table .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "depSumDw", 
-															title= "Download the whole table.",
-															placement= "top"
-														)
-													),
-													tabPanel("Transcriptomics analytically",
-														uiOutput(outputId= "commonDegsHelp"),
-														
-														DT::dataTableOutput("degStats",
-															) %>% withSpinner(color="#008d4c"),
-
-														downloadButton(outputId= "degStatAll",
-															label="Download table .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "degStatAll", 
-															title= "Download the whole table.",
-															placement= "top"
-														),
-														downloadButton(outputId= "degStatFiltered",
-															label="Download filtered data .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "degStatFiltered", 
-															title= paste0("Filter any column of the table and then press ", 
-																"this button to download the filtered data."),
-															placement= "top"
-														),
-														downloadButton(outputId= "degStatSel",
-															label="Download selected .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "degStatSel", 
-															title= paste0("Select a number of rows from the above table ", 
-																"and then press this button to download them."),
-															placement= "top"
-														)
-													),
-													width= 12
-												) %>% add_class("step1_transStats"), # Close "degStatBox"
-												shinydashboard::tabBox(
-													id= "paResBox",
-													tabPanel("Pathway analysis results",
-														DT::dataTableOutput("paResTable",
-															) %>% withSpinner(color="#008d4c"),
-														downloadButton(outputId= "paResDown",
-															label="Download results .xlsx",
-															style= "background-color: #d42132; color: white;
-																border-color: #d42132;"
-														),
-														bsTooltip(
-															id= "paResDown", 
-															title= "Download the full PA report",
-															placement= "top"
-														)
-													),
-													width = 12
-												) # Close "paResBox"
-											)
-										),
-										width= 12
-									), # Close "DEA statistics" tab
-									tabPanel(title= "Concerning dataset(-s)",
-										fluidRow(
-											column(width=12,
-												tipify(
-													h3("Dataset abstract and QC plots", shiny::icon("question-circle")) %>% add_class("step1_transConc"),
-													title= paste0("Choose a dataset from the table below and then press Plot ",
-														"at the bottom of the respective box to create a QC plot."
-													),
-													placement= "top"
-												)
-											)
-										),
-										fluidRow(
-											column(width=6, align= "center",
-												actionButton(
-													inputId= "introTransConc",
-													label= "About",
-													icon= shiny::icon("info-circle"), 
-													style= "background-color: #008d4c; color: white;
-														border-color: #008d4c;"
-												),
-												bsTooltip(
-													id= "introTransConc",
-													title= paste0("Info about this tab"),
-													placement= "bottom"
-												),
-												offset= 3
-											)
-										),
-										fluidRow(
-											column(width= 12,
-												uiOutput(outputId= "datasetsConserningHelp")
-											)
-										),
-										fluidRow(
-											column(width= 12,
-												DT::dataTableOutput("datasetsConserning")
-											)
-										),
-										fluidRow(
-											box(
-												uiOutput(outputId= "heatmapQCHelp"),
-												uiOutput(outputId= "heatmapQCstatWarning"),
-												plotlyOutput(outputId= "heatmapQC",
-													height= "600px") %>% withSpinner(color="#008d4c"),
-												actionButton(
-													inputId= "plotHeatmap",
-													label= "Plot heatmap",
-													icon= shiny::icon("paint-brush"),
-													style= "background-color: #d42132; color: white;
-														border-color: #d42132;"
-												),
-												width= 6, title= "Heatmap", status= "primary",
-												collapsible= TRUE, collapsed= TRUE
-											),
-											box(
-												uiOutput(outputId= "volcanoQCHelp"),
-												plotlyOutput(outputId= "volcanoQC",
-													height= "600px") %>% withSpinner(color="#008d4c"),
-												actionButton(
-													inputId= "plotVolcano",
-													label= "Plot volcano",
-													icon= shiny::icon("paint-brush"),
-													style= "background-color: #d42132; color: white;
-														border-color: #d42132;"
-												),
-												width= 6, title= "Volcano", status= "primary", 
-												collapsible= TRUE, collapsed= TRUE
-											)
-										),
-										width= 12
-									), # Close "Concerning dataset(-s)" tab
-									width= 12
-								) # Close "transDatasetsBox"
+										placement= "top"
+									),
+									offset= 8
+								)
+							),
+							fluidRow(
+								column(width= 12,
+									DT::dataTableOutput("datasetsTable")
+								)
 							),
 							width= 12
-						), # Close "Transcriptomic Datasets" tab
-						tabPanel(title= "Proteomic Datasets",
+						), # Close "Datasets" tab
+						tabPanel(title= "DEA statistics",
 							fluidRow(
-								shinydashboard::tabBox(
-									id= "protDatasetsBox",
-									tabPanel(title= "Datasets",
-										fluidRow(
-											tipify(
-												el= h3("Fibromine proteomic datasets",shiny::icon("question-circle")) %>% add_class("step1_protDat"),
-												title= paste0("Click one or multiple rows (they will turn blue) ",
-													"to choose a dataset(-s) and then press the Search button ",
-													"to explore. Results are presented at the next 2 tabs of the explorer. ",
-													"Use the GEO accession, Reference and Platform ",
-													"column hyperlinks for more information about a dataset."
-												),
-												placement= "bottom"
+								column(width=12, 
+									tipify(
+										h3("Common DEGs and DEPs",
+											shiny::icon("question-circle")
+										),
+										title= paste0("Common DEGs and respective DEPS across selected ",
+											"datasets using p-value and FC thresholds ",
+											"of 0.05 and 1.2 respectively."
+										)
+									)
+								)
+							),
+							fluidRow(
+								column(width=6, align= "center",
+									actionButton(
+										inputId= "introTransStats",
+										label= "About",
+										icon= shiny::icon("info-circle"), 
+										style= "background-color: #008d4c; color: white;
+											border-color: #008d4c;"
+									),
+									bsTooltip(
+										id= "introTransStats",
+										title= paste0("Info about exploration/integration results"),
+										placement= "bottom"
+									),
+									offset= 3
+								)
+							),
+							fluidRow(
+								column(width=2,
+									wellPanel(
+										h5("Change DEA\nthresholds"),
+										numericInput(
+											inputId= "pvalCommonIn",
+											label= "Type a p-value",
+											value= 0.05,
+											step= 0.01
+										),
+										numericInput(
+											inputId= "fcCommonIn",
+											label= "Type a Fold change",
+											value= 1.2,
+											step= 0.01
+										),
+										actionButton(
+											inputId= "filterCommon",
+											label= "Filter",
+											icon = shiny::icon("filter"),
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "filterCommon",
+											title= paste0(
+												"Use the above control panel to change ",
+												"thresholds and then press this button to ",
+												"apply changes."
+											)
+										)
+									) %>% add_class("step2_transStats"),
+									wellPanel(
+										h5("Pathway\nanalyses"),
+										helpText("Interrogate one/multiple datasets first."),
+										radioButtons(
+											inputId= "paChoice",
+											label= "Choose a pathway analysis method",
+											choices= c(
+												"ORA" = "ora"#,
+												# "Pre-ranked GSEA" = "preRnk"
 											)
 										),
-										fluidRow(
-											column(width=6, align= "center",
-												actionButton(
-													inputId= "introProtDat",
-													label= "About",
-													icon= shiny::icon("info-circle"), 
-													style= "background-color: #008d4c; color: white;
-														border-color: #008d4c;"
-												),
-												bsTooltip(
-													id= "introProtDat",
-													title= paste0("Info about exploring the proteomic datasets"),
-													placement= "bottom"
-												),
-												offset= 3
-											)
+										actionButton(
+											inputId= "paRun",
+											label="Go",
+											icon= shiny::icon("cog"),
+											style="background-color: #d42132; color: white;
+												border-color: #d42132;"
 										),
-										fluidRow(
-											column(width= 3,
-												actionButton(
-													inputId= "protDtstsSearch",
-													label= "Search",
-													icon= shiny::icon("search"),
-													style="background-color: #d42132; color: white;
-														border-color: #d42132;"
-												),
-												bsTooltip(
-													id= "protDtstsSearch",
-													title= paste0("Choose one or multiple datasets from ", 
-														"the table below and then press search. ",
-														"Results are presented at the next 2 tabs of the explorer."	
-													),
-													placement="bottom"
-												),
-												actionButton(
-													inputId= "clearProtDtstsSearch", 
-													label= "Reset", 
-													icon= shiny::icon("refresh"), 
-													style= " background-color: #008d4c; color: white;
-														border-color: #008d4c"
-												) %>% add_class("step2_protDat"),
-												bsTooltip(
-													id= "clearProtDtstsSearch",
-													title= "Clear dataset selection.",
-													placement="bottom"
-												),
-												actionButton(
-													inputId= "selectProtAll",
-													label= "Select all",
-													icon= shiny::icon("check"),
-													style="background-color: #d42132; color: white;
-														border-color: #d42132;"
-												),
-												bsTooltip(
-													id= "selectProtAll",
-													title= paste0("Select all table rows (based on current ",
-														"used filters). To select specific datasets ",
-														"click the respective table row."
-													),
-													placement= "top"
-												),
-												offset= 9
-											)
-										),
-										fluidRow(
-											column(width= 12,
-												DT::dataTableOutput("proteomicsTable")
-											)
-										),
-										width= 12
-									), # Close "Datasets" tab
-									tabPanel(title= "DEA data",
-										fluidRow(
-											column(width=12, 
-												tipify(
-													h3("Common DEPs",
-														shiny::icon("question-circle")
-													),
-													title= paste0("Common DEPs across selected ",
-														"datasets."
-													)
-												)
-											)
-										),
-										fluidRow(
-											column(width=6, align= "center",
-												actionButton(
-													inputId= "introProtStats",
-													label= "About",
-													icon= shiny::icon("info-circle"), 
-													style= "background-color: #008d4c; color: white;
-														border-color: #008d4c;"
-												),
-												bsTooltip(
-													id= "introProtStats",
-													title= paste0("Info about exploration/integration results"),
-													placement= "bottom"
-												),
-												offset= 3
-											)
-										),
-										fluidRow(
-											shinydashboard::tabBox(
-												id= "depStatBox",
-												tabPanel("Proteomics summary",
-													DT::dataTableOutput("depStatsSum",
-														) %>% withSpinner(color="#008d4c"),
+										helpText(paste("Note: Filter the 'Database' column of the 'Pathway analysis results'",
+											"table to interrogate enrichment of terms from different databases",
+											"including a COVID-19 gene set(!).")
+										)
+									)  %>% add_class("step3_transStats")
+								),
+								column(width=10,
+									shinydashboard::tabBox(
+										id= "degStatBox",
+										tabPanel("Transcriptomics summary",
+											DT::dataTableOutput("degStatsSum",
+												) %>% withSpinner(color="#008d4c"),
 
-													downloadButton(outputId= "depStatsSumAll",
-														label="Download table .xlsx",
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "depStatsSumAll", 
-														title= "Download the whole table.",
-														placement= "top"
-													),
-													downloadButton(outputId= "depStatsSumFiltered",
-														label="Download filtered data .xlsx",
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "depStatsSumFiltered", 
-														title= paste0("Filter any column of the table and then press ", 
-															"this button to download the filtered data."),
-														placement= "top"
-													)
-												),
-												tabPanel("Proteomics analytically",
-													DT::dataTableOutput("depStats",
-														) %>% withSpinner(color="#008d4c"),
-													
-													downloadButton(outputId= "depStatAll",
-														label="Download table .xlsx",
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "depStatAll", 
-														title= "Download the whole table.",
-														placement= "top"
-													),
-													downloadButton(outputId= "depStatFiltered",
-														label="Download filtered data .xlsx",
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "depStatFiltered", 
-														title= paste0("Filter any column of the table and then press ", 
-															"this button to download the filtered data."),
-														placement= "top"
-													),
-													downloadButton(outputId= "depStatSel",
-														label="Download selected .xlsx",
-														style= "background-color: #d42132; color: white;
-															border-color: #d42132;"
-													),
-													bsTooltip(
-														id= "depStatSel", 
-														title= paste0("Select a number of rows from the above table ", 
-															"and then press this button to download them."),
-														placement= "top"
-													)
-												),
-												width= 12
-											) %>% add_class("step1_protStats") # Close "depStatBox"
+											downloadButton(outputId= "degSumAll",
+												label="Download table .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "degSumAll", 
+												title= "Download the whole table.",
+												placement= "top"
+											),
+
+											downloadButton(outputId= "degSumFiltered",
+												label="Download filtered data .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "degSumFiltered", 
+												title= paste0("Filter any column of the table and then press ", 
+													"this button to download the filtered data."),
+												placement= "top"
+											)
+										),
+										tabPanel("Proteomics summary",
+											DT::dataTableOutput("depSum",
+												) %>% withSpinner(color="#008d4c"),
+
+											downloadButton(outputId= "depSumDw",
+												label="Download table .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "depSumDw", 
+												title= "Download the whole table.",
+												placement= "top"
+											)
+										),
+										tabPanel("Transcriptomics analytically",
+											uiOutput(outputId= "commonDegsHelp"),
+											
+											DT::dataTableOutput("degStats",
+												) %>% withSpinner(color="#008d4c"),
+
+											downloadButton(outputId= "degStatAll",
+												label="Download table .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "degStatAll", 
+												title= "Download the whole table.",
+												placement= "top"
+											),
+											downloadButton(outputId= "degStatFiltered",
+												label="Download filtered data .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "degStatFiltered", 
+												title= paste0("Filter any column of the table and then press ", 
+													"this button to download the filtered data."),
+												placement= "top"
+											),
+											downloadButton(outputId= "degStatSel",
+												label="Download selected .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "degStatSel", 
+												title= paste0("Select a number of rows from the above table ", 
+													"and then press this button to download them."),
+												placement= "top"
+											)
 										),
 										width= 12
-									), # Close "DEA data" tab
-									width= 12
-								) # Close "protDatasetsBox"
+									) %>% add_class("step1_transStats"), # Close "degStatBox"
+									shinydashboard::tabBox(
+										id= "paResBox",
+										tabPanel("Pathway analysis results",
+											DT::dataTableOutput("paResTable",
+												) %>% withSpinner(color="#008d4c"),
+											downloadButton(outputId= "paResDown",
+												label="Download results .xlsx",
+												style= "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											bsTooltip(
+												id= "paResDown", 
+												title= "Download the full PA report",
+												placement= "top"
+											)
+										),
+										width = 12
+									) # Close "paResBox"
+								)
 							),
 							width= 12
-						), # Close "Proteomics Datasets" tab
-						width=12
-					) # Close "datasetsBox"
+						), # Close "DEA statistics" tab
+						tabPanel(title= "Concerning dataset(-s)",
+							fluidRow(
+								column(width=12,
+									tipify(
+										h3("Dataset abstract and QC plots", shiny::icon("question-circle")) %>% add_class("step1_transConc"),
+										title= paste0("Choose a dataset from the table below and then press Plot ",
+											"at the bottom of the respective box to create a QC plot."
+										),
+										placement= "top"
+									)
+								)
+							),
+							fluidRow(
+								column(width=6, align= "center",
+									actionButton(
+										inputId= "introTransConc",
+										label= "About",
+										icon= shiny::icon("info-circle"), 
+										style= "background-color: #008d4c; color: white;
+											border-color: #008d4c;"
+									),
+									bsTooltip(
+										id= "introTransConc",
+										title= paste0("Info about this tab"),
+										placement= "bottom"
+									),
+									offset= 3
+								)
+							),
+							fluidRow(
+								column(width= 12,
+									uiOutput(outputId= "datasetsConserningHelp")
+								)
+							),
+							fluidRow(
+								column(width= 12,
+									DT::dataTableOutput("datasetsConserning")
+								)
+							),
+							fluidRow(
+								box(
+									uiOutput(outputId= "heatmapQCHelp"),
+									uiOutput(outputId= "heatmapQCstatWarning"),
+									plotlyOutput(outputId= "heatmapQC",
+										height= "600px") %>% withSpinner(color="#008d4c"),
+									actionButton(
+										inputId= "plotHeatmap",
+										label= "Plot heatmap",
+										icon= shiny::icon("paint-brush"),
+										style= "background-color: #d42132; color: white;
+											border-color: #d42132;"
+									),
+									width= 6, title= "Heatmap", status= "primary",
+									collapsible= TRUE, collapsed= TRUE
+								),
+								box(
+									uiOutput(outputId= "volcanoQCHelp"),
+									plotlyOutput(outputId= "volcanoQC",
+										height= "600px") %>% withSpinner(color="#008d4c"),
+									actionButton(
+										inputId= "plotVolcano",
+										label= "Plot volcano",
+										icon= shiny::icon("paint-brush"),
+										style= "background-color: #d42132; color: white;
+											border-color: #d42132;"
+									),
+									width= 6, title= "Volcano", status= "primary", 
+									collapsible= TRUE, collapsed= TRUE
+								)
+							),
+							width= 12
+						), # Close "Concerning dataset(-s)" tab
+						width= 12
+					), # Close "transDatasetsBox"
+					width= 12
 				)
-			),
+			),  # Close "ByTransDataset" menu item
+
+			# Proteomic datasets tabItem
+			tabItem(tabName= "ByProtDataset",
+				fluidRow(
+					fluidRow(
+						h3("Proteomics datasets explorer") %>% add_class("step1_protDat"),
+					),
+					fluidRow(
+						column(width=6, align= "center",
+							actionButton(
+								inputId= "introProtDat",
+								label= "About",
+								icon= shiny::icon("info-circle"), 
+								style= "background-color: #008d4c; color: white;
+									border-color: #008d4c;"
+							),
+							bsTooltip(
+								id= "introProtDat",
+								title= paste0("Info about exploring the proteomic datasets"),
+								placement= "bottom"
+							),
+							offset= 3
+						)
+					),
+					shinydashboard::tabBox(
+						id= "protDatasetsBox",
+						tabPanel(title= "Datasets",
+							fluidRow(
+								tipify(
+									el= h3("Datasets table",shiny::icon("question-circle")),
+									title= paste0("Click one or multiple rows (they will turn blue) ",
+										"to choose a dataset(-s) and then press the Search button ",
+										"to explore. Results are presented at the next 2 tabs of the explorer. ",
+										"Use the GEO accession, Reference and Platform ",
+										"column hyperlinks for more information about a dataset."
+									),
+									placement= "bottom"
+								)
+							),
+							fluidRow(
+								column(width= 3,
+									actionButton(
+										inputId= "protDtstsSearch",
+										label= "Search",
+										icon= shiny::icon("search"),
+										style="background-color: #d42132; color: white;
+											border-color: #d42132;"
+									) %>% add_class("step2_protDat"),
+									bsTooltip(
+										id= "protDtstsSearch",
+										title= paste0("Choose one or multiple datasets from ", 
+											"the table below and then press search. ",
+											"Results are presented at the next 2 tabs of the explorer."	
+										),
+										placement="bottom"
+									),
+									actionButton(
+										inputId= "clearProtDtstsSearch", 
+										label= "Reset", 
+										icon= shiny::icon("refresh"), 
+										style= " background-color: #008d4c; color: white;
+											border-color: #008d4c"
+									) %>% add_class("step3_protDat"),
+									bsTooltip(
+										id= "clearProtDtstsSearch",
+										title= "Clear dataset selection.",
+										placement="bottom"
+									),
+									actionButton(
+										inputId= "selectProtAll",
+										label= "Select all",
+										icon= shiny::icon("check"),
+										style="background-color: #d42132; color: white;
+											border-color: #d42132;"
+									),
+									bsTooltip(
+										id= "selectProtAll",
+										title= paste0("Select all table rows (based on current ",
+											"used filters). To select specific datasets ",
+											"click the respective table row."
+										),
+										placement= "top"
+									),
+									offset= 9
+								)
+							),
+							fluidRow(
+								column(width= 12,
+									DT::dataTableOutput("proteomicsTable")
+								)
+							),
+							width= 12
+						), # Close "Datasets" tab
+						tabPanel(title= "DEA data",
+							fluidRow(
+								column(width=12, 
+									tipify(
+										h3("Common DEPs",
+											shiny::icon("question-circle")
+										),
+										title= paste0("Common DEPs across selected ",
+											"datasets."
+										)
+									)
+								)
+							),
+							fluidRow(
+								column(width=6, align= "center",
+									actionButton(
+										inputId= "introProtStats",
+										label= "About",
+										icon= shiny::icon("info-circle"), 
+										style= "background-color: #008d4c; color: white;
+											border-color: #008d4c;"
+									),
+									bsTooltip(
+										id= "introProtStats",
+										title= paste0("Info about exploration/integration results"),
+										placement= "bottom"
+									),
+									offset= 3
+								)
+							),
+							fluidRow(
+								shinydashboard::tabBox(
+									id= "depStatBox",
+									tabPanel("Proteomics summary",
+										DT::dataTableOutput("depStatsSum",
+											) %>% withSpinner(color="#008d4c"),
+
+										downloadButton(outputId= "depStatsSumAll",
+											label="Download table .xlsx",
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "depStatsSumAll", 
+											title= "Download the whole table.",
+											placement= "top"
+										),
+										downloadButton(outputId= "depStatsSumFiltered",
+											label="Download filtered data .xlsx",
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "depStatsSumFiltered", 
+											title= paste0("Filter any column of the table and then press ", 
+												"this button to download the filtered data."),
+											placement= "top"
+										)
+									),
+									tabPanel("Proteomics analytically",
+										DT::dataTableOutput("depStats",
+											) %>% withSpinner(color="#008d4c"),
+
+										downloadButton(outputId= "depStatAll",
+											label="Download table .xlsx",
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "depStatAll", 
+											title= "Download the whole table.",
+											placement= "top"
+										),
+										downloadButton(outputId= "depStatFiltered",
+											label="Download filtered data .xlsx",
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "depStatFiltered", 
+											title= paste0("Filter any column of the table and then press ", 
+												"this button to download the filtered data."),
+											placement= "top"
+										),
+										downloadButton(outputId= "depStatSel",
+											label="Download selected .xlsx",
+											style= "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										bsTooltip(
+											id= "depStatSel", 
+											title= paste0("Select a number of rows from the above table ", 
+												"and then press this button to download them."),
+											placement= "top"
+										)
+									),
+									width= 12
+								) %>% add_class("step1_protStats") # Close "depStatBox"
+							),	
+							width = 12
+						), # Close "DEA data" tab
+						width = 12
+					) # Close "protDatasetsBox"
+				)
+			),			
 
 			# ============================================================================
 			# Gene explorer tab
