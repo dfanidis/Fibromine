@@ -275,3 +275,24 @@ plotNetwork <- function(network) {
     	visOptions(selectedBy= list(variable="groups",multiple=T))
     return(out)
 }
+
+# ============================================================================
+# Toggle shiny buttons
+# (adapted from Florian's answer in
+# https://stackoverflow.com/questions/48851729/how-can-i-disable-all-action-buttons-while-shiny-is-busy-and-loading-text-is-dis)
+# ============================================================================
+toggle_inputs <- function(input_list, enable_inputs = TRUE)
+  {
+	buttons <- which(sapply(input_list, function(x) {
+		any(grepl('Button',attr(x, "class")))
+	}))
+	input_list <- input_list[buttons]
+
+    # Toggle elements
+    for(x in names(input_list))
+      if(enable_inputs){
+        shinyjs::enable(x)
+    } else {
+      shinyjs::disable(x)
+  	}
+}

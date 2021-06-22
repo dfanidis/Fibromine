@@ -545,10 +545,25 @@ shinyServer(function(input, output, session) {
 		datasetVals$fc
 		}, {
 
+		# Check assumptions
 		req(datasetVals$pval)
 		req(datasetVals$fc)
 		fcTemp <- log2(datasetVals$fc)
 
+		# Gather all shiny inputs
+		input_list <- reactiveValuesToList(input)
+		# Disable the input buttons
+		toggle_inputs(input_list, FALSE)
+
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Fetching data", 
+			detail = "All other actions will be currently suspended", 
+			value = 0.25
+		)
+
+		# Begin statistics gathering
 		stats <- vector("list", length= nrow(transSamplesSelected()))
 		names(stats) <- transSamplesSelected()$DatasetID 
 
@@ -615,6 +630,7 @@ shinyServer(function(input, output, session) {
 				colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
 
 				stats[[i]] <- stat_temp
+				progress$inc(0.25)
 
 			} else {
 
@@ -678,6 +694,7 @@ shinyServer(function(input, output, session) {
 				colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
 
 				stats[[i]] <- stat_temp
+				progress$inc(0.25)
 			}
 
 		}
@@ -688,11 +705,22 @@ shinyServer(function(input, output, session) {
 		freq <- table(stats$Name)
 		common <- names(which(freq >= length(unique(stats$GSE))*.5))
 		out <- stats[which(stats$Name %in% common),]
+		progress$inc(0.25)
+
 		return(out)
 	})
 
 	statSum <- eventReactive(samplesStat(), {
 
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Integrating data",
+			detail = "All other actions will be currently suspended",
+			value = 0.2
+		)
+
+		# Begin statistics gathering
 		nDatasets <- length(unique(samplesStat()$GSE))
 		statList <- split(samplesStat(), f= samplesStat()$Name)
 
@@ -720,6 +748,7 @@ shinyServer(function(input, output, session) {
 		} else {
 			noSymbol <- NULL
 		}
+		progress$inc(0.2)
 
 		## Summarize statistics for genes with UNavailable Symbol
 		## that endured the statistics filtering above.
@@ -775,7 +804,8 @@ shinyServer(function(input, output, session) {
 		} else {
 			statSumTempNo <- NULL
 		}
-		
+		progress$inc(0.2)
+
 		## Summarize statistics for genes with available Symbol
 		statSumTemp <- lapply(statList, function(x) {
 
@@ -825,6 +855,7 @@ shinyServer(function(input, output, session) {
 			statSumTemp <- statSumTemp[-drop]
 		} 
 		statSumTemp <- do.call("rbind", statSumTemp)
+		progress$inc(0.2)
 
 		## Bind statSumTempNo (if any) and statSumTemp
 		statSumTemp <- rbind(statSumTempNo, statSumTemp)
@@ -858,13 +889,30 @@ shinyServer(function(input, output, session) {
 			paste0("Out of ", nDatasets, " Datasets"),
 			"log2FcAve", "pvalThres"
 		)
-		
+
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+		progress$inc(0.2)
+
 		return(out)
 	})
 
 	## Get DEP data
 	depSum <- eventReactive(statSum(), {
 		
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Fetching data",
+			detail = "All other actions will be currently suspended", 
+			value = 0.25
+		)
+
 		out <- dbGetQuery(
 			conn= fibromine_db,
 			statement= '
@@ -885,9 +933,16 @@ shinyServer(function(input, output, session) {
 			;',
 			params= list(x= statSum()$Code)
 		)
+		progress$inc(0.50)			
+
 		out <- out[out$Contrast %in% transSamplesSelected()[,"DescrContrast"], ]
 		out <- out[out$Tissue %in% transSamplesSelected()[,"Tissue"], ]
 		colnames(out)[1:2] <- c("Name", "Code")
+		progress$inc(0.25)			
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
 		return(out)
 	})	
 
@@ -1208,14 +1263,22 @@ shinyServer(function(input, output, session) {
 		}, {
 		req(statSum())
 
+		# Gather all shiny input buttons and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
 		## Create a progress object
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message = "Fetching data", value = 0)
+		progress$set(message = "Fetching data",
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)
 
 		## Remove the table if display is disabled
 		## (e.g. during a new datasets integration) 
 		if (isTRUE(datasetVals$hidePA))  {
+			toggle_inputs(input_list, TRUE)
 			return(NULL)
 		} else {
 			## Data
@@ -1258,13 +1321,22 @@ shinyServer(function(input, output, session) {
 						dw <- dw[which(dw != "-")]
 
 						# Perform the analysis
-						progress$set(message = "Analysis step 1/2", value = 0.20)
+						progress$set(message = "Analysis step 1/2",
+							detail = "All other actions will be currently suspended",
+							value = 0.20
+						)
 						enrUp <- enrichr(genes = up, databases = dbs)
 						progress$inc(0.2)			
 
-						progress$set(message = "Analysis step 2/2", value = 0.55)
+						progress$set(message = "Analysis step 2/2",
+							detail = "All other actions will be currently suspended",
+							value = 0.55
+						)
 						enrDw <- enrichr(genes = dw, databases = dbs)
-						progress$set(message = "Formating results", value = 0.75)
+						progress$set(message = "Formating results",
+							detail = "All other actions will be currently suspended",
+							value = 0.75
+						)
 
 						# Keep the significantly enriched terms
 						enrUp <- lapply(enrUp, function(x){
@@ -1330,6 +1402,10 @@ shinyServer(function(input, output, session) {
 					"Combined Score" = as.character()
 				)
 			}
+
+			# Reactivate all shiny input buttons
+			toggle_inputs(input_list, TRUE)
+
 			return(paRes)
 		}
 	})
@@ -1501,7 +1577,7 @@ shinyServer(function(input, output, session) {
 
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Retrieving data", value=0)
+		progress$set(message = "Retrieving data", value=0)
 		progress$inc(0.25)
 
 		normExprValues <- dbGetQuery(
@@ -1608,7 +1684,7 @@ shinyServer(function(input, output, session) {
 
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Retrieving data", value=0)
+		progress$set(message = "Retrieving data", value=0)
 		progress$inc(0.5)
 
 		species <- datasetsConserning()[input$datasetsConserning_rows_selected, 
@@ -1809,6 +1885,18 @@ shinyServer(function(input, output, session) {
 	## Retrieve DE data
 	protSamplesStat <- eventReactive(protSamplesSelected(), {
 
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Fetching data",
+			detail = "All other actions will be currently suspended", 
+			value = 0.25
+		)
+
 		protStats <- vector("list", length= nrow(protSamplesSelected()))
 		names(protStats) <- protSamplesSelected()$DatasetID 
 
@@ -1889,6 +1977,7 @@ shinyServer(function(input, output, session) {
 
 			protStats[[i]] <- out
 		}
+		progress$inc(0.25)
 		protStats <- do.call("rbind", protStats)
 		rownames(protStats) <- NULL
 
@@ -1896,10 +1985,20 @@ shinyServer(function(input, output, session) {
 		protFreq <- table(protStats$"Protein Name")
 		protCommon <- names(which(protFreq >= length(unique(protStats$DatasetID))*.5))
 		out <- protStats[which(protStats$"Protein Name" %in% protCommon),]
+		progress$inc(0.50)
+
 		return(out)
 	})
 
 	protStatSum <- eventReactive(protSamplesStat(), {
+
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Integrating data",
+			message = "All other actions will be currently suspended", 
+			value = 0.25
+		)
 
 		nProtDatasets <- length(unique(protSamplesStat()$DatasetID))
 		protStatList <- split(protSamplesStat(), f= protSamplesStat()$UniprotAC)
@@ -1942,11 +2041,19 @@ shinyServer(function(input, output, session) {
 			}
 			return(out)
 		})
+		progress$inc(0.25)
+
 		protStatSumTemp[is.na(protStatSumTemp)] <- NULL
 		protStatSumTemp <- do.call("rbind", protStatSumTemp)
 		rownames(protStatSumTemp) <- NULL
 		colnames(protStatSumTemp)[3] <- paste0("Out of ", nProtDatasets,
 			" Datasets")
+		progress$inc(0.50)
+
+		# Gather all shiny buttons and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+
 		return(protStatSumTemp)
 	})
 
