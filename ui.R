@@ -1,77 +1,13 @@
 # Fibromine "ui.R" for Shiny Server
 
 # ============================================================================
-# Load required packages
+# Source global objects
 # ============================================================================
-pckgList <- c(
-  "shiny", 
-  "shinyjs",
-  "shinyBS", 
-  "shinydashboard",
-  "shinycssloaders", 
-  "DT", 
-  "heatmaply", 
-  "RSQLite",
-  "reshape", 
-  "igraph", 
-  "visNetwork",
-  "htmlwidgets", 
-  "openxlsx", 
-  "rjson",
-  "rintrojs",
-  "httr",
-  "enrichR"
-)
-pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
-if(length(pckgMissing)) install.packages(pckgMissing)
-
-for (i in pckgList) {
-  library(i, character.only= TRUE)
-}
-
-## Connect to DB
-db_path <- "."
-fibromine_db <- dbConnect(RSQLite::SQLite(), 
-  file.path(db_path, "FibromineDB.sqlite"))
-
-curDir <- getwd()
-source(file.path(curDir, "utils.R"))
-
-# ============================================================================
-# techChoices
-# ============================================================================
-techChoices <- c("RNA expression profiling", 
-	"Non-coding RNA expression profiling")
-
-# ============================================================================
-# Datasets lists to use in download data tab
-# ============================================================================
-transDatasets <- dbGetQuery(
-	fibromine_db,
-	'SELECT DISTINCT
-		DatasetID 
-	FROM 
-		DatasetsDescription
-	;'
-)
-transDatasets <- as.character(transDatasets[,1])
-transDatasets <- transDatasets[grep("^GSE", transDatasets)]
-
-protDatasets <- dbGetQuery(
-	fibromine_db,
-	'SELECT DISTINCT
-		DatasetID 
-	FROM 
-		DatasetsDescription
-	;'
-)
-protDatasets <- as.character(protDatasets[,1])
-protDatasets <- protDatasets[-grep("^GSE", protDatasets)]
+source("./global.R")
 
 # ============================================================================
 # shinyUI()
 # ============================================================================
-
 shinyUI(dashboardPage(
 	dashboardHeader(
 		title= "Fibromine"

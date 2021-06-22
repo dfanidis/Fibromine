@@ -1,56 +1,14 @@
 # Fibromine "server.R" for Shiny Server
-starsHsa <- read.delim("./www/decorationTables/gseHsa.txt")			
-starsMmu <- read.delim("./www/decorationTables/gseMmu.txt")			
-starsII <- read.delim("./www/decorationTables/ipf_vs_ctrl_lung_coding.txt")
-starsIII <- read.delim("./www/decorationTables/bleoD14_vs_ctrl_lung_coding.txt")
-starsIV <- read.delim("./www/decorationTables/gseNonCoding.txt")
-stars <- rbind(starsHsa, starsMmu, starsIV)
 
 # ============================================================================
-# Load required packages
+# Source global objects
 # ============================================================================
-
-pckgList <- c(
-  "shiny", 
-  "shinyjs",
-  "shinyBS", 
-  "shinydashboard",
-  "shinycssloaders", 
-  "DT", 
-  "heatmaply", 
-  "RSQLite",
-  "reshape", 
-  "igraph", 
-  "visNetwork",
-  "htmlwidgets", 
-  "openxlsx", 
-  "rjson",
-  "rintrojs",
-  "httr",
-  "enrichR"
-)
-pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
-if(length(pckgMissing)) install.packages(pckgMissing)
-
-for (i in pckgList) {
-  library(i, character.only= TRUE)
-}
+source("./global.R")
 
 # ============================================================================
 # shinyServer()
 # ============================================================================
-
 shinyServer(function(input, output, session) {
-
-	# ============================================================================
-	# Connect to DB
-	# ============================================================================
-	db_path <- "."
-	fibromine_db <- dbConnect(RSQLite::SQLite(), 
-	file.path(db_path, "FibromineDB.sqlite"))
-
-	curDir <- getwd()
-	source(file.path(curDir, "utils.R"))
 
 	# ============================================================================
 	# "Home" tab Items
