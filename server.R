@@ -248,9 +248,9 @@ shinyServer(function(input, output, session) {
 		dbGetQuery(conn= fibromine_db,
 			statement='
 				SELECT 
-					DatasetsDescription.DatasetID, Reference, ReferenceURL, Protocol, 
-					Datasets.Tech, Platform, GPL, Datasets.Species, Tissue, DescrContrast, 
-					nExpCtrlPostCuration 
+					DatasetsDescription.DatasetID, Reference, ReferenceURL, 
+					Datasets.Tech, Platform, GPL, Datasets.Species, Tissue,
+					DescrContrast, nExpCtrlPostCuration 
 				FROM 
 					DatasetsDescription 
 				JOIN 
@@ -301,9 +301,9 @@ shinyServer(function(input, output, session) {
 		out$Ctrl[is.na(out$Ctrl)] <- 1
 
 		out <- subset(out, select= -c(ReferenceURL, GPL, nExpCtrlPostCuration))
-		out <- out[,c(1,3,2,9,4:8,10,11)]
+		out <- out[,c(1,3,2,8,4:7,9,10)]
 		colnames(out) <- c("GEO accession", "PMID", "Comparison", 
-			"Stars count", "Protocol", "Technology", "Platform",
+			"Stars count", "Technology", "Platform",
 			"Species", "Tissue", "#Experimental", "#Control")
 
 		## Convert to factors for easier client-side filtering of the table
@@ -345,7 +345,7 @@ shinyServer(function(input, output, session) {
 	datasetVals$protTable <- dbGetQuery(conn= fibromine_db,
 		statement='
 			SELECT 
-				DatasetsDescription.DatasetID, Reference, ReferenceURL, Protocol, 
+				DatasetsDescription.DatasetID, Reference, ReferenceURL, 
 				Datasets.Tech, Datasets.Species, Tissue, DescrContrast, 
 				nExpCtrl 
 			FROM 
@@ -378,7 +378,7 @@ shinyServer(function(input, output, session) {
 		out$Ctrl <- suppressWarnings(as.integer(nSamples[,2]))
 
 		out <- subset(out, select= -c(ReferenceURL, nExpCtrl))
-		colnames(out) <- c("Dataset", "PMID", "Protocol", 
+		colnames(out) <- c("Dataset", "PMID", 
 			"Technology", "Species", "Tissue", "Comparison", 
 			"#Experimental", "#Control"
 		)
@@ -973,8 +973,8 @@ shinyServer(function(input, output, session) {
 	            	"The user can <b>choose</b> his/her own thresholds from the boxes above and then",
 	            	"press this button to filter the results."
 	            ),
-	            paste("Follow any of the here presented <b>hyperlinks</b> to perform <b>pathway analysis</b>",
-	            	"using the <b>WebGestalt</b> online tool."
+	            paste("Exploit enrichR to perform pathway analysis using as input the consensus differentially",
+	            	"expressed genes reported and the most popular Enrich databases."
 	            )
 	        ),
 	        position= rep("auto", 3)

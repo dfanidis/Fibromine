@@ -431,6 +431,7 @@ shinyUI(dashboardPage(
 													actionButton(
 														inputId= "filterCommon",
 														label= "Filter",
+														icon = shiny::icon("filter"),
 														style= "background-color: #d42132; color: white;
 															border-color: #d42132;"
 													),
