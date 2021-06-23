@@ -3760,7 +3760,7 @@ shinyServer(function(input, output, session) {
 				id= "geneMessageII", type= "error")
 		}
 		progress$inc(0.5)
-		
+
 		# Reactivate all shiny inputs
 		toggle_inputs(input_list, TRUE)
 	})
@@ -3942,12 +3942,21 @@ shinyServer(function(input, output, session) {
 	## Create PPI plot upon request
 	network <- eventReactive(input$ppiPlot, {
 
-		progress <- shiny::Progress$new()												## Create a progress object
+		## Create a progress object
+		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Creating network. Please be patient.", value=0)
-		progress$inc(0.2)																
+		progress$set(message= "Creating network", 
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)
+		progress$inc(0.2)	
+
+		## Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 		
-		net <- dbGetQuery(																## Retrieve queried protein's top 9 interactors
+		## Retrieve queried protein's top 9 interactors
+		net <- dbGetQuery(
 			conn= fibromine_db,
 			statement= '
 				SELECT 
@@ -4011,6 +4020,10 @@ shinyServer(function(input, output, session) {
 			)
 		)
 		progress$inc(0.2)
+
+		## Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
 		return(out)
 	})
 
@@ -4048,7 +4061,7 @@ shinyServer(function(input, output, session) {
 
 	})
 
-	## Updare contrast based on tissue selection
+	## Update contrast based on tissue selection
 	observeEvent(input$visExpression, {
 
 		req(input$comparisonInNet)
@@ -4056,9 +4069,16 @@ shinyServer(function(input, output, session) {
 
 		progress <- shiny::Progress$new()													
 		on.exit(progress$close())
-		progress$set(message= "Annotating network", value=0)
+		progress$set(message = "Annotating network",
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)
 		progress$inc(0.25)																	
 		
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
 		prtnVals$annotDataSel <- subset(prtnVals$annotDataSel,
 			DescrContrast== input$comparisonInNet)
 		prtnVals$annotDataSel <- subset(prtnVals$annotDataSel,
@@ -4243,6 +4263,8 @@ shinyServer(function(input, output, session) {
 
 		prtnVals$annotDataUsed <- dataUsed
 
+		# Reactivate all shiny inputs
+		toggle_inputs(input_list, TRUE)
 	})
 
 	## dataUsed table
