@@ -1561,9 +1561,14 @@ shinyServer(function(input, output, session) {
 	## Use a 2nd level observeEvent to remove plot once the tab is changed
 	observeEvent(input$plotHeatmap, {
 		datasetVals$plotHeat <- input$plotHeatmap 
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
 	})
 
-	observeEvent(input$datasetResultsTab, {
+	observeEvent(input$transDatasetsBox, {
 		datasetVals$plotHeat <- FALSE
 	})
 
@@ -1577,7 +1582,10 @@ shinyServer(function(input, output, session) {
 
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message = "Retrieving data", value=0)
+		progress$set(message = "Retrieving data", 
+			detail = "All other actions will be currently suspended", 
+			value=0
+		)
 		progress$inc(0.25)
 
 		normExprValues <- dbGetQuery(
@@ -1635,6 +1643,11 @@ shinyServer(function(input, output, session) {
 
 		progress$inc(0.25)
 		out <- list(expr= expr,cond= cond, adjpval= adjpval)
+
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+
 		return(out)
 
 	})
@@ -1670,9 +1683,13 @@ shinyServer(function(input, output, session) {
 	## Use a 2nd level observeEvent to remove plot once the tab is changed
 	observeEvent(input$plotVolcano, {
 		datasetVals$plotVolc <- input$plotVolcano 
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 	})
 
-	observeEvent(input$datasetResultsTab, {
+	observeEvent(input$transDatasetsBox, {
 		datasetVals$plotVolc <- FALSE
 	})
 
@@ -1753,6 +1770,11 @@ shinyServer(function(input, output, session) {
 		
 		out <- list(stat= stat, species= species, tech= tech)
 		progress$inc(0.5)
+		
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+
 		return(out)
 	})
 

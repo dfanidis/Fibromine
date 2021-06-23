@@ -516,13 +516,13 @@ shinyUI(dashboardPage(
 							),
 							width= 12
 						), # Close "DEA statistics" tab
-						tabPanel(title= "Concerning dataset(-s)",
+						tabPanel(title= "Dataset plots",
 							fluidRow(
 								column(width=12,
 									tipify(
-										h3("Dataset abstract and QC plots", shiny::icon("question-circle")) %>% add_class("step1_transConc"),
+										h3("Exploratory plots", shiny::icon("question-circle")) %>% add_class("step1_transConc"),
 										title= paste0("Choose a dataset from the table below and then press Plot ",
-											"at the bottom of the respective box to create a QC plot."
+											"at the bottom of the respective box to create an exploratory plot."
 										),
 										placement= "top"
 									)
