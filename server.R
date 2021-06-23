@@ -3594,7 +3594,14 @@ shinyServer(function(input, output, session) {
 
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Fetching data", value=0)
+		progress$set(message = "Fetching data",
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 
 		# Transform HGNC symbol to ensembl gene ID
 		prtnVals$geneNamePPI <- dbGetQuery(
@@ -3657,6 +3664,9 @@ shinyServer(function(input, output, session) {
 			}
 		}
 		progress$inc(0.5)
+
+		# Reactivate all shiny inputs
+		toggle_inputs(input_list, TRUE)
 	})
 
 	## Fetch gene-related protein info
@@ -3664,7 +3674,14 @@ shinyServer(function(input, output, session) {
 		
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Fetching data", value=0)
+		progress$set(message = "Fetching data",
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 
 		## Check name given. If ensembl OK. If HGNC symcol transform to ensembl gene ID
 		if (length(grep("^ENSG|^ENSMUSG", input$geneNamePPI))) {
@@ -3743,6 +3760,9 @@ shinyServer(function(input, output, session) {
 				id= "geneMessageII", type= "error")
 		}
 		progress$inc(0.5)
+		
+		# Reactivate all shiny inputs
+		toggle_inputs(input_list, TRUE)
 	})
 
 	## Display results====================================================================
