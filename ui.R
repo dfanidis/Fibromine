@@ -33,7 +33,7 @@ shinyUI(dashboardPage(
 			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_7"),
 			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")) %>% add_class("step_8"),
 
-			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/aidinis-lab") %>% add_class("step_9"),
+			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_9"),
 			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_10")
 		)
 	),
