@@ -3476,15 +3476,27 @@ shinyServer(function(input, output, session) {
 	# "Protein explorer" tab Items
 	# ============================================================================
 	prtnVals <- reactiveValues(geneNamePPI=NULL, uniprot=NULL, 
-		string=NULL, annotData=NULL, annotDataSel=NULL, annotDataUsed=NULL)
+		string=NULL, annotData=NULL, annotDataSel=NULL, annotDataUsed=NULL,
+		hidePPI = NULL)
 
-	dataProtein <- eventReactive(eventExpr=input$geneNameSearchPPI, 
-		valueExpr=input$geneNamePPI
+	dataProtein <- eventReactive(
+		eventExpr = input$geneNameSearchPPI, 
+		valueExpr = input$geneNamePPI
 	)
-	dataProtein_example <- eventReactive(eventExpr=input$geneNameSearchPPIExample, 
-		valueExpr= "ACTA2"
+	dataProtein_example <- eventReactive(
+		eventExpr = input$geneNameSearchPPIExample, 
+		valueExpr = "ACTA2"
 	)
-	
+
+	## Automatically remove any previous PPI ploted
+	## once a new search/example has been initiated
+	observeEvent({
+		input$geneNameSearchPPI
+		input$geneNameSearchPPIExample
+		}, {
+		prtnVals$hidePPI <- TRUE
+	})
+
 	# =============================
 	## Protein explorer's main tour
 	stepsProtein <- reactive(
@@ -3939,8 +3951,21 @@ shinyServer(function(input, output, session) {
 				c("#FF8E8E", "#7AFF59"))) 
 	})
 
+	## PPI network=======================================================================
+
+	## Enable the display of a new PPI network
+	observeEvent(input$ppiPlot,
+		prtnVals$hidePPI <- FALSE
+	)
+
 	## Create PPI plot upon request
-	network <- eventReactive(input$ppiPlot, {
+	network <- eventReactive({input$ppiPlot
+		prtnVals$hidePPI
+		}, {
+
+		## Defence against requesting a plot w/o 
+		## a prior valid search
+		req(prtnVals$geneNamePPI)
 
 		## Create a progress object
 		progress <- shiny::Progress$new()
@@ -3955,76 +3980,84 @@ shinyServer(function(input, output, session) {
 		input_list <- reactiveValuesToList(input)
 		toggle_inputs(input_list, FALSE)
 		
-		## Retrieve queried protein's top 9 interactors
-		net <- dbGetQuery(
-			conn= fibromine_db,
-			statement= '
-				SELECT 
-					* 
-				FROM 
-					PPI 
-				WHERE 
-					Protein1 = :x AND InteractionCombinedScore >= 700
-				ORDER BY 
-					InteractionCombinedScore DESC 
-				LIMIT 
-					9
-			;',
-			params= list(x= prtnVals$string$StringID)
-		)
-		progress$inc(0.2)																
-
-		## Shape network in a dataframe
-		net_df <- shapeNetwork(net, prtnVals$string,
-			fibromine_db)
-		progress$inc(0.2)	
-
-		## Plot the network
-		out <- plotNetwork(net_df)					
-		progress$inc(0.2)
-
-		## Update species selection of the "color by expression" control panel 
-		if (grepl("^ENSG", prtnVals$geneNamePPI)) {
-			sps <- "Homo sapiens"
+		## Remove the plot if display is disabled
+		## (during a new search/example)
+		if (isTRUE(prtnVals$hidePPI))  {
+			toggle_inputs(input_list, TRUE)
+			return(NULL)
 		} else {
-			sps <- "Mus musculus"
-		}
-		updateTextInput(session, inputId= "speciesInNet", label= "Species", 
-			value= sps)
 
-		## Update tissue selection 
-		prtnVals$annotData <- dbGetQuery(									## Query dataset information for species selected
-			conn=fibromine_db,
-			statement='
-				SELECT 
-					* 
-				FROM 
-					Datasets JOIN DatasetsDescription 
-				ON 
-					Datasets.DatasetID = DatasetsDescription.DatasetID
-				WHERE 
-					Datasets.Species = :x 
-					AND Datasets.Tech = "Expression profiling by array"
-			;',
-			params= list(x= sps)
-		)
-
-		tissueChoicesNet <- unique(prtnVals$annotData$Tissue)
-		shinyjs::enable("tissueInNet")													## Update tissueInNet selection input
-		updateSelectizeInput(session, 
-			inputId= "tissueInNet", 
-			choices= tissueChoicesNet,
-			options= list(
-				placeholder= "Select tissue",
-				onInitialize= I('function() { this.setValue(""); }')
+			## Retrieve queried protein's top 9 interactors
+			net <- dbGetQuery(
+				conn= fibromine_db,
+				statement= '
+					SELECT 
+						* 
+					FROM 
+						PPI 
+					WHERE 
+						Protein1 = :x AND InteractionCombinedScore >= 700
+					ORDER BY 
+						InteractionCombinedScore DESC 
+					LIMIT 
+						9
+				;',
+				params= list(x= prtnVals$string$StringID)
 			)
-		)
-		progress$inc(0.2)
+			progress$inc(0.2)																
 
-		## Reactivate shiny inputs
-		toggle_inputs(input_list, TRUE)
+			## Shape network in a dataframe
+			net_df <- shapeNetwork(net, prtnVals$string,
+				fibromine_db)
+			progress$inc(0.2)	
 
-		return(out)
+			## Plot the network
+			out <- plotNetwork(net_df)					
+			progress$inc(0.2)
+
+			## Update species selection of the "color by expression" control panel 
+			if (grepl("^ENSG", prtnVals$geneNamePPI)) {
+				sps <- "Homo sapiens"
+			} else {
+				sps <- "Mus musculus"
+			}
+			updateTextInput(session, inputId= "speciesInNet", label= "Species", 
+				value= sps)
+
+			## Update tissue selection 
+			prtnVals$annotData <- dbGetQuery(									## Query dataset information for species selected
+				conn=fibromine_db,
+				statement='
+					SELECT 
+						* 
+					FROM 
+						Datasets JOIN DatasetsDescription 
+					ON 
+						Datasets.DatasetID = DatasetsDescription.DatasetID
+					WHERE 
+						Datasets.Species = :x 
+						AND Datasets.Tech = "Expression profiling by array"
+				;',
+				params= list(x= sps)
+			)
+
+			tissueChoicesNet <- unique(prtnVals$annotData$Tissue)
+			shinyjs::enable("tissueInNet")													## Update tissueInNet selection input
+			updateSelectizeInput(session, 
+				inputId= "tissueInNet", 
+				choices= tissueChoicesNet,
+				options= list(
+					placeholder= "Select tissue",
+					onInitialize= I('function() { this.setValue(""); }')
+				)
+			)
+			progress$inc(0.2)
+
+			## Reactivate shiny inputs
+			toggle_inputs(input_list, TRUE)
+
+			return(out)
+		}
 	})
 
 	output$ppiNetwork <- renderVisNetwork({
