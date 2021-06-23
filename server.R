@@ -2279,10 +2279,17 @@ shinyServer(function(input, output, session) {
 		updateRadioButtons(session, inputId= "speciesChoice", selected= "Human")
 
 		## Create a process object
-		progress <- shiny::Progress$new()					## Create a progress object
+		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Fetching data", value=0)
-		progress$inc(0.25)				
+		progress$set(message = "Fetching data", 
+			detail = "All other actions will be currently suspended",
+			value = 0
+		)		
+		progress$inc(0.25)		
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 
 		batch <- "MAP3K8"
 		geneNameList <- vector("list", length(batch))
@@ -2494,15 +2501,27 @@ shinyServer(function(input, output, session) {
 		annot <- do.call("rbind", annot)
 		geneVals$geneNames <- paste(unique(annot$Name))
 		progress$inc(0.25)
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
 	})
 
 	## Fetch gene-related info============================================================================ 
 	observeEvent(data_geneNameSearch(), {
 		
-		progress <- shiny::Progress$new()					## Create a progress object
+		## Create a progress object
+		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message= "Fetching data", value=0)
+		progress$set(
+			message = "Fetching data", 
+			detail = "All other actions will be currently suspended",
+			value=0
+		)
 		progress$inc(0.25)						
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
 
 		## Format input
 		batch <- input$geneName
@@ -2972,6 +2991,9 @@ shinyServer(function(input, output, session) {
 		annot <- do.call("rbind", annot)
 		geneVals$geneNames <- paste(unique(annot$Name))
 		progress$inc(0.25)
+				
+		# Reactivate all shiny inputs
+		toggle_inputs(input_list, TRUE)
 	})
 	
 	## Display fetched info=================================================================================

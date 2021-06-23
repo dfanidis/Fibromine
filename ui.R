@@ -842,7 +842,7 @@ shinyUI(dashboardPage(
 							),
 							actionButton(
 								inputId= "introGene",
-								label= "About the explorer",
+								label= "About",
 								icon= shiny::icon("info-circle"), 
 								style= "background-color: #008d4c; color: white;
 									border-color: #008d4c;"
@@ -1031,7 +1031,7 @@ shinyUI(dashboardPage(
 							),
 							actionButton(
 								inputId= "introProt",
-								label= "About the explorer",
+								label= "About",
 								icon= shiny::icon("info-circle"), 
 								style= "background-color: #008d4c; color: white;
 									border-color: #008d4c;"
