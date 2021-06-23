@@ -454,6 +454,10 @@ shinyServer(function(input, output, session) {
 				updateTabsetPanel(session, "transDatasetsBox",
 					selected= "DEA statistics"
 				)
+				# and then to "Transcriptomics summary" tab
+				updateTabsetPanel(session, "degStatBox",
+					selected= "Transcriptomics summary"
+				)
 			}
 	})
 
@@ -1872,9 +1876,13 @@ shinyServer(function(input, output, session) {
 	})
 
 	## Automatically redirect to the results tab
+	## and then specifically to "Proteomics summary" tab
 	observeEvent(input$protDtstsSearch, {
 		updateTabsetPanel(session, "protDatasetsBox",
 				selected= "DEA data")
+		updateTabsetPanel(session, "depStatBox",
+			selected= "Proteomics summary"
+		)
 	})
 
 	## Choose all rows
@@ -2018,7 +2026,7 @@ shinyServer(function(input, output, session) {
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
 		progress$set(message = "Integrating data",
-			message = "All other actions will be currently suspended", 
+			detail = "All other actions will be currently suspended", 
 			value = 0.25
 		)
 
