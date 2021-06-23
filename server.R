@@ -5161,12 +5161,30 @@ shinyServer(function(input, output, session) {
 			)
 		},
 		content= function(file) {
+
+			## Defend against an attempt to download w/o
+			## prior selection of a dataset
+			req(input$normDataRequest)
+
+			# Gather all shiny inputs and disable them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, FALSE)
+
+			# Disable download buttons as well
+			shinyjs::disable("normData")
+			shinyjs::disable("normDataFlat")
+			shinyjs::disable("protData")
+			shinyjs::disable("protDataFlat")
+
 			## Get the normalized values
 			datasetID <- input$normDataRequest
 
 			progress <- shiny::Progress$new()
 			on.exit(progress$close())
-			progress$set(message= "Retrieving data", value=0)
+			progress$set(message = "Retrieving data",
+				detail = "All other actions will be currently suspended",
+				value = 0
+			)
 			progress$inc(0.25)
 
 			normValues <- dbGetQuery(
@@ -5181,7 +5199,10 @@ shinyServer(function(input, output, session) {
 				;',
 				params= list(x= datasetID)
 			)
-			progress$inc(0.5)
+			progress$set(message = "Formatting output",
+				detail = "All other actions will be currently suspended",
+				value = 0.75
+			)
 
 			## Reconstruct expression values table
 			outTemp <- split(normValues, f= normValues$GSMcode)
@@ -5195,7 +5216,89 @@ shinyServer(function(input, output, session) {
 			out <- cbind(Name= out$Name, out[, (1:ncol(out))-1])
 			progress$inc(0.25)
 
+			## Reactivate shiny inputs and download buttons
+			toggle_inputs(input_list, TRUE)
+			shinyjs::enable("normData")
+			shinyjs::enable("normDataFlat")
+			shinyjs::enable("protData")
+			shinyjs::enable("protDataFlat")
+
 			write.xlsx(out, file)
+		}
+	)
+
+	output$normDataFlat <- downloadHandler(
+		filename= function() {
+			paste0(input$normDataRequest, 
+				"normalizedExpressionValues", 
+				"_", Sys.Date(), ".txt"
+			)
+		},
+		content= function(file) {
+
+			## Defend against an attempt to download w/o
+			## prior selection of a dataset
+			req(input$normDataRequest)
+
+			# Gather all shiny inputs and disable them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, FALSE)
+
+			# Disable download buttons as well
+			shinyjs::disable("normData")
+			shinyjs::disable("normDataFlat")
+			shinyjs::disable("protData")
+			shinyjs::disable("protDataFlat")
+
+			## Get the normalized values
+			datasetID <- input$normDataRequest
+
+			progress <- shiny::Progress$new()
+			on.exit(progress$close())
+			progress$set(message = "Retrieving data", 
+				detail = "All other actions will be currently suspended",
+				value = 0
+			)
+			progress$inc(0.25)
+
+			normValues <- dbGetQuery(
+				conn= fibromine_db,
+				statement= '
+					SELECT 
+						* 
+					FROM 
+						NormExprValues 
+					WHERE
+						GSE = :x
+				;',
+				params= list(x= datasetID)
+			)
+			progress$set(message = "Formatting output", 
+				detail = "All other actions will be currently suspended",
+				value = 0.75
+			)
+
+			## Reconstruct expression values table
+			outTemp <- split(normValues, f= normValues$GSMcode)
+			outTemp <- lapply(outTemp, function(x) {
+				out <- data.frame(x$NormValues, stringsAsFactors=FALSE)
+			})
+			out <- data.frame(matrix(unlist(outTemp), ncol=length(outTemp),
+				byrow=FALSE), stringsAsFactors= FALSE)
+			out$Name <- normValues$Symbol[1:nrow(out)]
+			colnames(out) <- c(names(outTemp),"Name")
+			out <- cbind(Name= out$Name, out[, (1:ncol(out))-1])
+			progress$inc(0.25)
+
+			## Reactivate shiny inputs and download buttons
+			toggle_inputs(input_list, TRUE)
+			shinyjs::enable("normData")
+			shinyjs::enable("normDataFlat")
+			shinyjs::enable("protData")
+			shinyjs::enable("protDataFlat")
+
+			write.table(out, file = file, sep= "\t", quote = FALSE,
+				col.names = TRUE, row.names = FALSE)
 		}
 	)
 
@@ -5207,11 +5310,29 @@ shinyServer(function(input, output, session) {
 			)
 		},
 		content= function(file) {
+
+			## Defend against an attempt to download w/o
+			## prior selection of a dataset
+			req(input$protDataRequest)
+
+			# Gather all shiny inputs and disable them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, FALSE)
+
+			# Disable download buttons as well
+			shinyjs::disable("normData")
+			shinyjs::disable("normDataFlat")
+			shinyjs::disable("protData")
+			shinyjs::disable("protDataFlat")
+
 			datasetID <- input$protDataRequest
 
 			progress <- shiny::Progress$new()
 			on.exit(progress$close())
-			progress$set(message= "Retrieving data", value=0)
+			progress$set(message = "Retrieving data", 
+				detail = "All other actions will be currently suspended",
+				value = 0
+			)
 			progress$inc(0.25)
 
 			out <- dbGetQuery(
@@ -5233,10 +5354,85 @@ shinyServer(function(input, output, session) {
 				params= list(x= datasetID)
 			)
 			colnames(out)[ncol(out)] <- "Comparison"
+			progress$inc(0.75)
+			
+			## Reactivate shiny inputs and download buttons
+			toggle_inputs(input_list, TRUE)
+			shinyjs::enable("normData")
+			shinyjs::enable("normDataFlat")
+			shinyjs::enable("protData")
+			shinyjs::enable("protDataFlat")
+
 			write.xlsx(out, file)
 		}
 	)
 
+	output$protDataFlat <- downloadHandler(
+		filename= function() {
+			paste0(input$protDataRequest, 
+				"_", "expressionData", 
+				"_", Sys.Date(), ".txt"
+			)
+		},
+		content= function(file) {
+
+			## Defend against an attempt to download w/o
+			## prior selection of a dataset
+			req(input$protDataRequest)
+			
+			# Gather all shiny inputs and disable them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, FALSE)
+
+			# Disable download buttons as well
+			shinyjs::disable("normData")
+			shinyjs::disable("normDataFlat")
+			shinyjs::disable("protData")
+			shinyjs::disable("protDataFlat")
+
+			datasetID <- input$protDataRequest
+
+			progress <- shiny::Progress$new()
+			on.exit(progress$close())
+			progress$set(message = "Retrieving data", 
+				detail = "All other actions will be currently suspended",
+				value = 0
+			)
+			progress$inc(0.25)
+
+			out <- dbGetQuery(
+				conn= fibromine_db,
+				statement= '
+					SELECT 
+						DEP.UniprotAC, GeneAnnotation.Symbol,
+						GeneAnnotation.ENSGid, DEP.ExpressionDirection, 
+						DEP.DatasetID, DEP.Contrast
+					FROM 
+						DEP JOIN ENSGid2UniP JOIN GeneAnnotation
+					ON 
+						DEP.UniprotAC = ENSGid2UniP.UniprotAC
+					AND
+						ENSGid2UniP.ENSGid = GeneAnnotation.ENSGid
+					WHERE
+						DatasetID = :x
+				;',
+				params= list(x= datasetID)
+			)
+			colnames(out)[ncol(out)] <- "Comparison"
+			progress$inc(0.75)
+
+			## Reactivate shiny inputs and download buttons
+			toggle_inputs(input_list, TRUE)
+			shinyjs::enable("normData")
+			shinyjs::enable("normDataFlat")
+			shinyjs::enable("protData")
+			shinyjs::enable("protDataFlat")
+
+			write.table(out, file = file, sep= "\t", quote = FALSE,
+				col.names = TRUE, row.names = FALSE)
+		}
+	)
+	
 	# ============================================================================
 	# Remove 'temp' DB table created for network plotting purposes
 	# ============================================================================

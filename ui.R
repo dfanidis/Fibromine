@@ -1353,7 +1353,17 @@ shinyUI(dashboardPage(
 							),
 							bsTooltip(
 								id= "normData", 
-								title= "Select a dataset to download.",
+								title= "Select a dataset to download as .xlsx",
+								placement= "bottom"
+							),
+							downloadButton(outputId= "normDataFlat",
+								label="Download data .txt",
+								style= "background-color: #d42132; color: white;
+									border-color: #d42132;"
+							),
+							bsTooltip(
+								id= "normDataFlat", 
+								title= "Select a dataset to download as tab delimited .txt",
 								placement= "bottom"
 							)
 						)
@@ -1387,7 +1397,17 @@ shinyUI(dashboardPage(
 							),
 							bsTooltip(
 								id= "protData", 
-								title= "Select a dataset to download.",
+								title= "Select a dataset to download as .xlsx",
+								placement= "bottom"
+							),
+							downloadButton(outputId= "protDataFlat",
+								label="Download data .txt",
+								style= "background-color: #d42132; color: white;
+									border-color: #d42132;"
+							),
+							bsTooltip(
+								id= "protDataFlat", 
+								title= "Select a dataset to download as tab delimited .txt",
 								placement= "bottom"
 							)
 						)
