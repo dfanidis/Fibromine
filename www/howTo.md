@@ -17,21 +17,21 @@
 	The user can also perform different types of **pathway analyses (8)** using the top variable of the concensus differentially expressed genes.   
 
 	<a href= "howToScreenshots/datasetExpl2.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl2.png" alt="image" style="width:900px;height:500px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl2.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
 
 	<a href= "howToScreenshots/datasetExpl3.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl3.png" alt="image" style="width:900px;height:500px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl3.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
 
 	<a href= "howToScreenshots/datasetExpl4.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl4.png" alt="image" style="width:900px;height:500px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl4.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
 
 3. **Concerning dataset(-s)** tab (1) gives to the user the ability to plot an interactive heatmap and volcano plot for any of the datasets queried in step 1. **To plot** any of the two, **select a dataset** from the tab's table (2) and then **press the respective _Plot_ button**, **(3-4)**.
 
 	<a href= "howToScreenshots/datasetExpl5.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl5.png" alt="image" style="width:900px;height:700px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl5.png" alt="image" style="width:900px;height:670px" class="center"/>
 	</a>
 
 ##### 1.2 Explore one - or integrate multiple - proteomics dataset
@@ -39,17 +39,17 @@
 1. Go to **Dataset explorer --> Proteomic datasets --> Datasets tab** and **choose** (via clicking) the dataset/comparison of interest from the displayed table as shown below. To begin analysis **press the _Search_ button (1)** and you will be redirected to the **results tab (3)**. To **reset** analysis input it is recommended to **reset** parameters via the **homonym button (2)**. *Note: Every column of the table can be dynamically filtered.* 
 
 	<a href= "howToScreenshots/datasetExpl6.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl6.png" alt="image" style="width:800px;height:500px" class="center">
+		<img src= "./howToScreenshots/datasetExpl6.png" alt="image" style="width:800px;height:400px" class="center">
 	</a>
 
 2. If more than one datasets have been selected then consensus differentially expressed proteins are presented at the **Proteomics summary** tab **(2)**. In the case of a single dataset interrogation the aforementioned tab displays the same data presented at the **Proteomics analytically** tab **(3)**, namely all the DE proteins of the queried datasets. **Out of ... Datasets (3)** column enables a better control on the reported differentially expressed features just like in the transcriptomic datasets, while **ExpressionDirection (4)** column holds the consensus direction of deregulation. Columns **(5-6)** host data regarding the **genes coding** the queried proteins.
 
 	<a href= "howToScreenshots/datasetExpl7.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl7.png" alt="image" style="width:900px;height:600px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl7.png" alt="image" style="width:900px;height:500px" class="center"/>
 	</a>
 
 	<a href= "howToScreenshots/datasetExpl8.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./howToScreenshots/datasetExpl8.png" alt="image" style="width:900px;height:600px" class="center"/>
+		<img src= "./howToScreenshots/datasetExpl8.png" alt="image" style="width:900px;height:500px" class="center"/>
 	</a>
 
 ---
