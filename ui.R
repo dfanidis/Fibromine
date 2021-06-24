@@ -10,7 +10,15 @@ source("./global.R")
 # ============================================================================
 shinyUI(dashboardPage(
 	dashboardHeader(
-		title= "Fibromine"
+		title= "Fibromine",
+
+		## Logo for the header
+		tags$li(
+			imageOutput("logoFibroHead",
+				inline= TRUE
+			),
+			class = "dropdown"
+		)
 	),
 	dashboardSidebar(
 		introjsUI(), # required for rintrojs to function properly
@@ -45,7 +53,15 @@ shinyUI(dashboardPage(
 			tabItem(tabName= "Home",
 				wellPanel(
 					fluidRow(
-						h1("Fibromine"),
+						div(
+							"Fibromine",
+							imageOutput("logoFibro",
+								inline= TRUE
+							),
+							style = "font-weight: bold; text-align: center; color: #d42132; font-size: 36px"
+						)
+					),
+					fluidRow(
 						h3("An interactive multi-omics data mining tool for Idiopathic Pulmonary Fibrosis")
 					),
 					fluidRow(
@@ -62,8 +78,9 @@ shinyUI(dashboardPage(
 								title= "General info about Fibromine",
 								placement= "bottom"
 							),
-							width= 1,
-							offset= 5
+							width = 6,
+							align = "center",
+							offset = 3
 						)
 					),
 					fluidRow(

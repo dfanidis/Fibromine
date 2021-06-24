@@ -73,6 +73,32 @@ shinyServer(function(input, output, session) {
 			)
 		)
 	)
+	
+	## Render logo for the header
+	output$logoFibroHead <- renderImage({
+		width <- "50px"
+		height <- "50px"
+		list(
+			src = "./www/logos/FibromineLogo_v0.3.png",
+			contentType = "image/jpeg",
+			width = width,
+			height = height,
+			style = "padding-top:10px; padding-bottom:10px; padding-right: 10px;"
+		)
+	}, deleteFile = FALSE)
+
+	## Render logo for the home page
+	output$logoFibro <- renderImage({
+		width <- "100px"
+		height <- "100px"
+		list(
+			src = "./www/logos/FibromineLogo_v0.3.png",
+			contentType = "image/jpeg",
+			width = width,
+			height = height,
+			style = "padding-top:10px; padding-bottom:10px; padding-right: 10px;"
+		)
+	}, deleteFile = FALSE)
 
 	## Render external image hyperlinks
 	output$gene <- renderImage({
