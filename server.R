@@ -1312,7 +1312,10 @@ shinyServer(function(input, output, session) {
 			return(NULL)
 		} else {
 			## Data
-			data <- statSum()
+			data <- statSum()[input$degStatsSum_rows_all,]
+			if(nrow(data) == 0) {
+				data <- statSum()
+			}
 
 			## Choose enricr site and dbs
 			setEnrichrSite("Enrichr")
