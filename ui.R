@@ -1094,113 +1094,120 @@ shinyUI(dashboardPage(
 						),
 						tabPanel(title="PPI network",
 							fluidRow(
-								column(width= 3,
-									actionButton(
-										inputId="ppiPlot",
-										label= "Plot",
-										icon= shiny::icon("paint-brush"),
-										style= "background-color: #d42132; color: white;
-											border-color: #d42132;"
-									),
-									bsTooltip(
-										id= "ppiPlot",
-										title= paste0("Search a protein by coding gene name ",
-											"and then use this button to plot a PPI network ",
-											"for the selected protein."
+								shinydashboard::tabBox(
+									tabPanel("Network",
+										fluidRow(
+											column(width= 3,
+												actionButton(
+													inputId="ppiPlot",
+													label= "Plot",
+													icon= shiny::icon("paint-brush"),
+													style= "background-color: #d42132; color: white;
+														border-color: #d42132;"
+												),
+												bsTooltip(
+													id= "ppiPlot",
+													title= paste0("Search a protein by coding gene name ",
+														"and then use this button to plot a PPI network ",
+														"for the selected protein."
+													),
+													placement= "bottom"
+												),
+												actionButton(
+													inputId= "introPPI",
+													label= "About",
+													icon= shiny::icon("info-circle"), 
+													style= "background-color: #008d4c; color: white;
+														border-color: #008d4c;"
+												)
+											)#,
+											# column(width= 6,
+											# 	helpText("After a new search please press 'Plot' again to get
+											# 		the new PPI plot.")
+											# )
 										),
-										placement= "bottom"
-									),
-									actionButton(
-										inputId= "introPPI",
-										label= "About",
-										icon= shiny::icon("info-circle"), 
-										style= "background-color: #008d4c; color: white;
-											border-color: #008d4c;"
-									)
-								)#,
-								# column(width= 6,
-								# 	helpText("After a new search please press 'Plot' again to get
-								# 		the new PPI plot.")
-								# )
-							),
-							fluidRow(
-								## Network plotting area
-								column(width=6,
-									visNetworkOutput(outputId= "ppiNetwork",
-										height= "650px") %>% withSpinner(color="#008d4c")
-								),
-
-								## Color by expression control panel
-								column(width=3,
-									wellPanel(
-										shinyjs::disabled(
-											textInput(
-												inputId= "speciesInNet",
-												label= "Species",
-												value= NULL,
-												placeholder= "Species will be auto-filled"
+										fluidRow(
+											## Network plotting area
+											column(width=6,							
+												visNetworkOutput(outputId= "ppiNetwork",
+													height= "650px") %>% withSpinner(color="#008d4c")
 											),
-											selectizeInput(
-												inputId= "comparisonInNet",
-												choices= "",
-												label= "Select comparison",
-												options= list(
-													placeholder = "Select comparison",
-													onInitialize = I('function() { this.setValue(""); }')
+
+											## Color by expression control panel
+											column(width=3,
+												wellPanel(
+													shinyjs::disabled(
+														textInput(
+															inputId= "speciesInNet",
+															label= "Species",
+															value= NULL,
+															placeholder= "Species will be auto-filled"
+														),
+														selectizeInput(
+															inputId= "comparisonInNet",
+															choices= "",
+															label= "Select comparison",
+															options= list(
+																placeholder = "Select comparison",
+																onInitialize = I('function() { this.setValue(""); }')
+															)
+														) %>% add_class("step2_ppi")
+													),
+													numericInput(
+														inputId= "fcInNet",
+														label= "Type a Fold change",
+														value= 1.2,
+														step= 0.01
+													)
 												)
-											) %>% add_class("step2_ppi")
-										),
-										numericInput(
-											inputId= "fcInNet",
-											label= "Type a Fold change",
-											value= 1.2,
-											step= 0.01
+											),
+											column(width=3,
+												wellPanel(
+													shinyjs::disabled(
+														selectizeInput(
+															inputId= "tissueInNet",
+															choices= "",
+															label= "Select tissue",
+															options= list(
+																placeholder = "Select tissue",
+																onInitialize = I('function() { this.setValue(""); }')
+															)
+														) %>% add_class("step1_ppi")
+													),
+													numericInput(
+														inputId= "pvalInNet",
+														label= "Type a p-value",
+														value= 0.05,
+														step= 0.01
+													),
+													actionButton(
+														inputId= "visExpression",
+														label= "Annotate",
+														style= "background-color: #d42132; color: white;
+															border-color: #d42132;"
+													),
+													actionButton(
+														inputId= "clearAnnotationParams",
+														label= "Reset",
+														icon= shiny::icon("refresh"),
+														style= "background-color: #008d4c; color: white;
+															border-color: #008d4c;"
+													),
+													helpText("Define parameters to annotate the network using
+														DEA data. Datasets used to perform the annotation will
+														be presented in 'Data used' tab.")
+												)
+											)
 										)
-									)
-								),
-								column(width=3,
-									wellPanel(
-										shinyjs::disabled(
-											selectizeInput(
-												inputId= "tissueInNet",
-												choices= "",
-												label= "Select tissue",
-												options= list(
-													placeholder = "Select tissue",
-													onInitialize = I('function() { this.setValue(""); }')
-												)
-											) %>% add_class("step1_ppi")
-										),
-										numericInput(
-											inputId= "pvalInNet",
-											label= "Type a p-value",
-											value= 0.05,
-											step= 0.01
-										),
-										actionButton(
-											inputId= "visExpression",
-											label= "Annotate",
-											style= "background-color: #d42132; color: white;
-												border-color: #d42132;"
-										),
-										actionButton(
-											inputId= "clearAnnotationParams",
-											label= "Reset",
-											icon= shiny::icon("refresh"),
-											style= "background-color: #008d4c; color: white;
-												border-color: #008d4c1;"
-										),
-										helpText("Define parameters to annotate the network using
-											DEA data. Datasets used to perform the annotation will
-											be presented in 'Data used' tab.")
-									)
-								)
-							)
-						),
-						tabPanel(title="Data used",
-							fluidRow(
-								column(width=12,
-									DT::dataTableOutput("dataUsed")
+									),
+									tabPanel(title = "Data used for annotation",
+										fluidRow(
+											column(width=12,
+												DT::dataTableOutput("dataUsed")
+											)
+										)
+									),
+									width = 12
 								)
 							)
 						),
