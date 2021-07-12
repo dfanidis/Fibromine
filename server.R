@@ -3512,8 +3512,8 @@ shinyServer(function(input, output, session) {
 	# ============================================================================
 	# "Protein explorer" tab Items
 	# ============================================================================
-	prtnVals <- reactiveValues(geneNamePPI=NULL, uniprot=NULL, 
-		string=NULL, annotData=NULL, annotDataSel=NULL, annotDataUsed=NULL,
+	prtnVals <- reactiveValues(geneNamePPI = NULL, uniprot = NULL, 
+		string = NULL, annotData = NULL, annotDataSel = NULL, annotDataUsed = NULL,
 		hidePPI = NULL)
 
 	dataProtein <- eventReactive(

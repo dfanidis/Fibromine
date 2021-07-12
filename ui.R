@@ -1072,33 +1072,22 @@ shinyUI(dashboardPage(
 				),
 				fluidRow(
 					shinydashboard::tabBox(
-						tabPanel(title="Concerning protein",
+						tabPanel(title="Search results",
 							fluidRow(
-								column(width=12,
+								column(width = 4,
 									h4("Aliases"),
-									htmlOutput(outputId= "Aliases")
-								),
-								column(width=12,
+									htmlOutput(outputId= "Aliases"),
 									h4("Protein function"),
-									htmlOutput(outputId= "PrtnFunction")
-								),
-								column(width=12,
+									htmlOutput(outputId= "PrtnFunction"),
 									h4("Subcellular location"),
-									htmlOutput(outputId= "SubcelLocation")
-								),
-								column(width=12,
+									htmlOutput(outputId= "SubcelLocation"),
 									h4("Disease implication"),
-									htmlOutput(outputId= "PrtnDisease")
-								),
-								column(width=12,
+									htmlOutput(outputId= "PrtnDisease"),
 									h4("Evidence level"),
 									htmlOutput(outputId= "PE")
-								)
-							)							
-						),
-						tabPanel(title="Differential expression",
-							fluidRow(
-								column(width= 12,
+								),
+								column(width = 8,
+									h4("Differential expression"),
 									DT::dataTableOutput("depData")
 								)
 							)							
