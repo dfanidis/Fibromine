@@ -4170,6 +4170,14 @@ shinyServer(function(input, output, session) {
 			)
 		)
 
+		## Calculate FDR to display at the "Data used" tab of the explorer
+		stat <- split(stat, f = stat$GSE)
+		stat <- lapply(stat, function(x) {
+			x$FDR <- p.adjust(x$Pval, method= "fdr")
+			return(x)
+		})
+		stat <- do.call("rbind", stat)
+
 		## Find DEGs based on a given Pval and log2FC threshold
 		log2fc <- log2(input$fcInNet)														
 		deg <- subset(stat, (Pval <= input$pvalInNet & log2FC >= log2fc) | 
@@ -4325,10 +4333,10 @@ shinyServer(function(input, output, session) {
 		dataUsed <- do.call("rbind", deg)
 		
 		if (!is.null(dataUsed)) {
-			dataUsed <- dataUsed[, c("ENSGid", "log2FC", "Pval", "GSE")]
+			dataUsed <- dataUsed[, c("ENSGid", "log2FC", "Pval", "FDR", "GSE")]
 			dataUsed$Symbol <- gsub("\\..*", "", rownames(dataUsed))
 			dataUsed <- dataUsed[, c(ncol(dataUsed), 1:(ncol(dataUsed)-1))]
-			colnames(dataUsed)[c(1:2, 5)] <- c("Gene name", "Code", "DatasetID")
+			colnames(dataUsed)[c(1:2,6)] <- c("Gene name", "Code", "DatasetID")
 		}
 
 		prtnVals$annotDataUsed <- dataUsed
@@ -4353,7 +4361,7 @@ shinyServer(function(input, output, session) {
 		clrsPal <- colorRampPalette(c("green","white","red"))
 		clrs <- clrsPal(length(brks)+1)
 
-		## Color significant FDR red
+		## Color significant p-values red
 		out$pvalColor <- ifelse(out$Pval < 0.05, 1, 0)
 
 		dtable <- datatable(
@@ -4367,7 +4375,7 @@ shinyServer(function(input, output, session) {
 				sDom  = '<"top">lrt<"bottom">ip',
 				columnDefs= list(
 					list(
-						targets= 5, 
+						targets = 6, 
 						visible = FALSE
 					),
 					list(
@@ -4381,7 +4389,7 @@ shinyServer(function(input, output, session) {
 			backgroundColor= styleInterval(brks, clrs)
 		) %>% formatStyle("Pval", "pvalColor",
 			backgroundColor= styleEqual(1, "#ff8e8e")
-		) %>% formatRound(c("log2FC", "Pval"),
+		) %>% formatRound(c("log2FC", "Pval", "FDR"),
 			digits= 5
 		)
 
