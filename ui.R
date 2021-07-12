@@ -34,7 +34,10 @@ shinyUI(dashboardPage(
 			) %>% add_class("step_1"),
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
-			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star")) %>% add_class("step_4"),
+			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star"),
+				menuItem("Benchmarking results", tabName = "BenchRes"),
+				menuItem("Benchmarking backstage", tabName = "BenchBack")
+			) %>% add_class("step_4"),
 			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_5"),
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_6"),
@@ -1220,7 +1223,7 @@ shinyUI(dashboardPage(
 			# ============================================================================
 			# Datasets benchmarking tab
 			# ============================================================================
-			tabItem(tabName= "Decor",
+			tabItem(tabName = "BenchRes",
 				fluidRow(
 					wellPanel(
 						fluidRow(
@@ -1228,65 +1231,59 @@ shinyUI(dashboardPage(
 								h2("Datasets benchmarking"),
 								p(),
 								shinydashboard::tabBox(
-									id= "benchmarking",
-									tabPanel(title= "Benchmarking results",
-										fluidRow(
-											column(width= 12,
-												shinydashboard::tabBox(
-													tabPanel(title= "All trans. coding datasets",
-														DT::dataTableOutput("decorRes"),
-														width= 12
-													),
-													tabPanel(title= "IPF_vs_Ctrl lung coding",
-														DT::dataTableOutput("decorResII"),
-														width= 12
-													),
-													tabPanel(title= "BleomD14_vs_Ctrl lung coding",
-														DT::dataTableOutput("decorResIII"),
-														width= 12
-													),
-													tabPanel(title= "All non-coding datasets",
-														DT::dataTableOutput("decorResIV"),
-														width= 12
-													),
-													width= 12
-												)
-											)
-										),
+									tabPanel(title= "All trans. coding datasets",
+										DT::dataTableOutput("decorRes"),
 										width= 12
 									),
-									tabPanel(title= "Benchmarking backstage",
-										fluidRow(
-											column(width= 12,
-												shinydashboard::tabBox(
-													tabPanel(title= "All trans. coding datasets",
-														includeMarkdown("./www/benchBackAllCoding.md"),
-														h4("Stars analytically"),
-														DT::dataTableOutput("benchAllCoding"),
-														width= 12
-													),
-													tabPanel(title= "IPF_vs_Ctrl lung coding",
-														includeMarkdown("./www/benchBackIPF_vs_Ctrl.md"),
-														h4("Stars analytically"),
-														DT::dataTableOutput("benchIPFCtrl"),
-														width= 12
-													),
-													tabPanel(title= "BleomD14_vs_Ctrl lung coding",
-														includeMarkdown("./www/benchBackBleomD14_vs_Ctrl.md"),
-														h4("Stars analytically"),
-														DT::dataTableOutput("benchBleomD14Ctrl"),
-														width= 12
-													),
-													tabPanel(title= "All non-coding datasets",
-														includeMarkdown("./www/benchBackNonCoding.md"),
-														h4("Stars analytically"),
-														DT::dataTableOutput("benchNonCoding"),
-														width= 12
-													),
-													width= 12
-												)
-											)
-										),
+									tabPanel(title= "IPF_vs_Ctrl lung coding",
+										DT::dataTableOutput("decorResII"),
+										width= 12
+									),
+									tabPanel(title= "BleomD14_vs_Ctrl lung coding",
+										DT::dataTableOutput("decorResIII"),
+										width= 12
+									),
+									tabPanel(title= "All non-coding datasets",
+										DT::dataTableOutput("decorResIV"),
+										width= 12
+									),
+									width= 12
+								)
+							)
+						)
+					)
+				)
+			),
+			tabItem(tabName = "BenchBack",
+				fluidRow(
+					wellPanel(
+						fluidRow(
+							column(width= 12,
+								h2("Benchmarking backstage"),
+								p(),
+								shinydashboard::tabBox(
+									tabPanel(title= "All trans. coding datasets",
+										includeMarkdown("./www/benchBackAllCoding.md"),
+										h4("Stars analytically"),
+										DT::dataTableOutput("benchAllCoding"),
+										width= 12
+									),
+									tabPanel(title= "IPF_vs_Ctrl lung coding",
+										includeMarkdown("./www/benchBackIPF_vs_Ctrl.md"),
+										h4("Stars analytically"),
+										DT::dataTableOutput("benchIPFCtrl"),
+										width= 12
+									),
+									tabPanel(title= "BleomD14_vs_Ctrl lung coding",
+										includeMarkdown("./www/benchBackBleomD14_vs_Ctrl.md"),
+										h4("Stars analytically"),
+										DT::dataTableOutput("benchBleomD14Ctrl"),
+										width= 12
+									),
+									tabPanel(title= "All non-coding datasets",
+										includeMarkdown("./www/benchBackNonCoding.md"),
+										h4("Stars analytically"),
+										DT::dataTableOutput("benchNonCoding"),
 										width= 12
 									),
 									width= 12
