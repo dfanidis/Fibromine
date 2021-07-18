@@ -227,6 +227,13 @@ shinyServer(function(input, output, session) {
 	datasetVals <- reactiveValues(mainTable=NULL, protTable= NULL, pval=0.05, 
 		fc=1.2, hidePA = NULL, stat=NULL, plotHeat= NULL, plotVolc= NULL)
 
+	# ---------------------------------------------------------------------------
+	# Triggers explanation:
+	# hidePA <- remove previous pathway analysis results with new search
+	# stop <- stop integration if datasets from >1 species have been selected and
+	#		after removing non-coding datasets, one species remain w/o datasets 
+	# ---------------------------------------------------------------------------
+
 	## Shape Datasets explorer main table=========================================
 	datasetVals$mainTable <- merge(
 		dbGetQuery(conn= fibromine_db,
@@ -445,14 +452,29 @@ shinyServer(function(input, output, session) {
 	
 	## Retrieve selection
 	transSamplesSelected <- eventReactive(input$transDtstsSearch, {
-		datasetVals$mainTable[input$datasetsTable_rows_selected, 
+		out <- datasetVals$mainTable[input$datasetsTable_rows_selected, 
 			c("DatasetID", "DescrContrast", "Tech", "Tissue", "Species")]
+
+		# Check if more than 1 species have been selected
+		if (length(unique(out$Species)) > 1) {
+			# Remove any non-coding datasets
+			out <- out[
+				!grepl("Non-coding RNA profiling by array", out$Tech),
+			]
+			# Check the remaining datasets
+			if (length(unique(out$Species)) < 2) {
+				datasetVals$stop <- TRUE
+			}
+		}
+		return(out)
 	})
 
-	## Automatically remove any previous pathway analysis table
+	## hipePA: Automatically remove any previous pathway analysis table
 	## once a new search has been initiated
+	## stop: Reset datasetVals$stop
 	observeEvent(input$transDtstsSearch, {
 		datasetVals$hidePA <- TRUE
+		datasetVals$stop <- FALSE
 	})
 
 	## Check if datasets from multiple species have been simultaneously selected
@@ -462,11 +484,12 @@ shinyServer(function(input, output, session) {
 		datasetVals$pval
 		datasetVals$fc
 		}, {
-			if (length(unique(transSamplesSelected()$Species)) > 1) {
+			# Check if more than 1 species have been selected
+			if (isTRUE(unique(datasetVals$stop))) {
 				modal <- modalDialog(												
 					title= "Attention!",
 					paste(	
-						"Currently Fibromine cannot integrate datasets from multiple species.",
+						"After removing non-coding datasets, no data remain in one of the species.",
 						"Please, choose another combination of datasets to integrate."
 					),
 					footer= tagList(
@@ -597,73 +620,9 @@ shinyServer(function(input, output, session) {
 		stats <- vector("list", length= nrow(transSamplesSelected()))
 		names(stats) <- transSamplesSelected()$DatasetID 
 
-		for (i in 1:length(stats)) {
-
-			if (transSamplesSelected()[i,"Tech"] == "Non-coding RNA profiling by array") {
-					
-				## Get statistics
-				## All genes must be fetched in order to properly compute FDR.
-				## DEGs will be selected downstream.
-				stat_temp <- dbGetQuery(																
-					conn=fibromine_db,
-					statement= '
-						SELECT 
-							prodAC, GSE, log2FC, Pval, StatContrastNonCoding
-						FROM 
-							StatComparisonsNonCoding 
-						WHERE 
-							GSE = :x AND StatContrastNonCoding = :y
-					;',
-					params= list(
-						x= transSamplesSelected()[i,"DatasetID"], 
-						y= transSamplesSelected()[i,"DescrContrast"]
-					)
-				)
-
-				# Compute FDR and place it next to nominal p-value
-				stat_temp$FDR <- p.adjust(stat_temp$Pval, method= "fdr")
-
-				# Keep genes based on user-defined pval and fc thresholds
-				stat_temp <- stat_temp[
-					which(stat_temp$log2FC < -fcTemp | stat_temp$log2FC > fcTemp),
-				] 
-				stat_temp <- stat_temp[
-					which(stat_temp$Pval < datasetVals$pval),
-				]
-
-				## Get prodAC2prodID map
-				## miRNA names are fetched separately
-				## to be in consistency with the coding datasets
-				## (see below)
-				prodAC2prodID <- dbGetQuery(															
-					conn= fibromine_db,
-					statement= '
-						SELECT 
-							prodAC, prodID 
-						FROM 
-							miRBase
-						WHERE
-							prodAC = :x
-					;',
-					params= list(
-						x= stat_temp$prodAC
-					)
-				)
-
-				## Merge
-				stat_temp <- merge(stat_temp, prodAC2prodID, by="prodAC", all.x=TRUE, sort=FALSE)		
-				stat_temp[which(is.na(stat_temp$prodID)),"prodID"] <- "-"
-				stat_temp <- stat_temp[, c(ncol(stat_temp), 1: (ncol(stat_temp)-1))]
-
-				## Format table
-				stat_temp <- stat_temp[ ,c(1,2,4,5,7,3,6)]
-				colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
-
-				stats[[i]] <- stat_temp
-				progress$inc(0.25)
-
-			} else {
-
+		# Check the selection of datasets from >1 species
+		if (length(unique(transSamplesSelected()$Species)) > 1) {
+			for (i in 1:length(stats)) {
 				## Get statistics
 				## All genes must be fetched in order to properly compute FDR.
 				## DEGs will be selected downstream.
@@ -719,72 +678,285 @@ shinyServer(function(input, output, session) {
 				stat_temp[which(is.na(stat_temp$Symbol)),"Symbol"] <- "-"
 				stat_temp <- stat_temp[, c(ncol(stat_temp), 1: (ncol(stat_temp)-1))]
 
-				## Format table
-				stat_temp <- stat_temp[ ,c(1,2,4,5,7,3,6)]
-				colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
+				## Get 1:1 homology mapping data for human genes
+				if (any(grep("^ENSG", stat_temp$ENSGid))){
+					homol <- dbGetQuery(
+						fibromine_db,
+						statement='
+							SELECT 
+								ENSGid, homologGene, orthType
+							FROM 
+								GeneAnnotation 
+							WHERE 
+								ENSGid = :x AND orthType = "ortholog_one2one"
 
+						;',
+						params= list(x= stat_temp$ENSGid)
+					)
+
+					## Keep only those human genes with 1:1 mouse homologue
+					stat_temp <- merge(stat_temp, homol, by = "ENSGid")
+
+					## Format table
+					stat_temp <- stat_temp[ ,c(2,1,4,5,7,3,6,8)]
+					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", 
+						"Comparison")
+				} else { # if it is a murine dataset
+					## Format table and create a pseudo-homology column
+					stat_temp <- stat_temp[ ,c(1,2,4,5,7,3,6)]
+					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
+					stat_temp$homologGene <- "-"
+				}
 				stats[[i]] <- stat_temp
 				progress$inc(0.25)
 			}
+			stats <- do.call("rbind", stats)
+			rownames(stats) <- NULL
 
+			## Keep common cross-Species genes and drop the homologGene column
+			kUp <- intersect(
+				stats[stats$homologGene != "-" & stats$log2FC > 0, "homologGene"],
+				stats[stats$homologGene == "-" & stats$log2FC > 0, "Code"]
+			)
+			kDw <- intersect(
+				stats[stats$homologGene != "-" & stats$log2FC < 0, "homologGene"],
+				stats[stats$homologGene == "-" & stats$log2FC < 0, "Code"]
+			)
+
+			out <- rbind(
+				stats[stats$homologGene %in% kUp,  1:7],
+				stats[stats$homologGene %in% kDw,  1:7],
+				stats[stats$Code %in% kUp, 1:7],
+				stats[stats$Code %in% kDw, 1:7]
+			)
+			progress$inc(0.25)
+		} else {
+			for (i in 1:length(stats)) {
+
+				if (transSamplesSelected()[i,"Tech"] == "Non-coding RNA profiling by array") {
+						
+					## Get statistics
+					## All genes must be fetched in order to properly compute FDR.
+					## DEGs will be selected downstream.
+					stat_temp <- dbGetQuery(																
+						conn=fibromine_db,
+						statement= '
+							SELECT 
+								prodAC, GSE, log2FC, Pval, StatContrastNonCoding
+							FROM 
+								StatComparisonsNonCoding 
+							WHERE 
+								GSE = :x AND StatContrastNonCoding = :y
+						;',
+						params= list(
+							x= transSamplesSelected()[i,"DatasetID"], 
+							y= transSamplesSelected()[i,"DescrContrast"]
+						)
+					)
+
+					# Compute FDR and place it next to nominal p-value
+					stat_temp$FDR <- p.adjust(stat_temp$Pval, method= "fdr")
+
+					# Keep genes based on user-defined pval and fc thresholds
+					stat_temp <- stat_temp[
+						which(stat_temp$log2FC < -fcTemp | stat_temp$log2FC > fcTemp),
+					] 
+					stat_temp <- stat_temp[
+						which(stat_temp$Pval < datasetVals$pval),
+					]
+
+					## Get prodAC2prodID map
+					## miRNA names are fetched separately
+					## to be in consistency with the coding datasets
+					## (see below)
+					prodAC2prodID <- dbGetQuery(															
+						conn= fibromine_db,
+						statement= '
+							SELECT 
+								prodAC, prodID 
+							FROM 
+								miRBase
+							WHERE
+								prodAC = :x
+						;',
+						params= list(
+							x= stat_temp$prodAC
+						)
+					)
+
+					## Merge
+					stat_temp <- merge(stat_temp, prodAC2prodID, by="prodAC", all.x=TRUE, sort=FALSE)		
+					stat_temp[which(is.na(stat_temp$prodID)),"prodID"] <- "-"
+					stat_temp <- stat_temp[, c(ncol(stat_temp), 1: (ncol(stat_temp)-1))]
+
+					## Format table
+					stat_temp <- stat_temp[ ,c(1,2,4,5,7,3,6)]
+					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
+
+					stats[[i]] <- stat_temp
+					progress$inc(0.25)
+
+				} else {
+
+					## Get statistics
+					## All genes must be fetched in order to properly compute FDR.
+					## DEGs will be selected downstream.
+					stat_temp <- dbGetQuery(																
+						conn=fibromine_db,
+						statement= '
+							SELECT 
+								ENSGid, GSE, log2FC, Pval, StatContrast
+							FROM 
+								StatComparisonsCoding 
+							WHERE 
+								GSE = :x AND StatContrast = :y
+						;',
+						params= list(
+							x= transSamplesSelected()[i,"DatasetID"], 
+							y= transSamplesSelected()[i,"DescrContrast"]
+						)
+					)
+
+					# Compute FDR and place it next to nominal p-value
+					stat_temp$FDR <- p.adjust(stat_temp$Pval, method= "fdr")
+
+					# Keep genes based on user-defined pval and fc thresholds
+					stat_temp <- stat_temp[
+						which(stat_temp$log2FC < -fcTemp | stat_temp$log2FC > fcTemp),
+					] 
+					stat_temp <- stat_temp[
+						which(stat_temp$Pval < datasetVals$pval),
+					]
+
+					## Get ENSGid2Symbol map
+					## Symbols are fected separately
+					## so as to be able to catch ensgid that
+					## do not have a matching gene symbol 
+					## (especially for RNA-seq datasets.) 
+					ENSGid2Symbol <- dbGetQuery(															
+						conn=fibromine_db,
+						statement='
+							SELECT 
+								ENSGid, Symbol 
+							FROM 
+								GeneAnnotation
+							WHERE 
+								ENSGid = :x
+						;',
+						params= list(
+							x= stat_temp$ENSGid
+						)
+					)
+
+					## Merge
+					stat_temp <- merge(stat_temp, ENSGid2Symbol, by="ENSGid", all.x=TRUE, sort=FALSE)
+					stat_temp[which(is.na(stat_temp$Symbol)),"Symbol"] <- "-"
+					stat_temp <- stat_temp[, c(ncol(stat_temp), 1: (ncol(stat_temp)-1))]
+			
+					## Format table
+					stat_temp <- stat_temp[ ,c(1,2,4,5,7,3,6)]
+					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
+
+					stats[[i]] <- stat_temp
+					progress$inc(0.25)
+				}
+
+			}
+			stats <- do.call("rbind", stats)
+			rownames(stats) <- NULL
+
+			## Keep DEGs common in at least half the selected datasets
+			freq <- table(stats$Name)
+			common <- names(which(freq >= length(unique(stats$GSE))*.5))
+			out <- stats[which(stats$Name %in% common),]
+			progress$inc(0.25)
 		}
-		stats <- do.call("rbind", stats)
-		rownames(stats) <- NULL
-
-		## Keep DEGs common in at least half the selected datasets
-		freq <- table(stats$Name)
-		common <- names(which(freq >= length(unique(stats$GSE))*.5))
-		out <- stats[which(stats$Name %in% common),]
-		progress$inc(0.25)
-
 		return(out)
 	})
 
 	statSum <- eventReactive(samplesStat(), {
 
-		# Create a progress object
-		progress <- shiny::Progress$new()
-		on.exit(progress$close())
-		progress$set(message = "Integrating data",
-			detail = "All other actions will be currently suspended",
-			value = 0.2
-		)
+		# Check the selection of datasets from >1 species
+		if (length(unique(transSamplesSelected()$Species)) > 1) {
 
-		# Begin statistics gathering
-		nDatasets <- length(unique(samplesStat()$GSE))
-		statList <- split(samplesStat(), f= samplesStat()$Name)
+			# Create a progress object
+			progress <- shiny::Progress$new()
+			on.exit(progress$close())
+			progress$set(message = "Integrating data",
+				detail = "All other actions will be currently suspended",
+				value = 0.2
+			)
 
-		## Isolate any genes without Symbol and separate them
-		if (any(names(statList) == "-")) {
-			
-			# Isolate
-			noSymbol <- statList[["-"]]
-			statList <- statList[which(names(statList) != "-")]
+			# Begin statistics gathering
+			# Keep hsa genes
+			statList <- samplesStat()[grep("^ENSG", samplesStat()$Code),]
+			statList <- split(statList, statList$Name)
 
-			# Genes without Symbol may be expressed by less than 
-			# half of the datasets. Check again for DEGs common 
-			# in at least half the selected datasets
-			freq <- table(noSymbol$Code)
-			common <- names(which(freq >= length(unique(samplesStat()$GSE))*.5))
-
-			# If any gene left
-			if (length(common)) {
-				noSymbol <- noSymbol[which(noSymbol$Code %in% common),]
-				# Separate them by Code
-				noSymbol <- split(noSymbol, f= noSymbol$Code)
+			## Isolate any genes without Symbol and separate them
+			if (any(names(statList) == "-")) {
+				noSymbol <- statList[["-"]]
+				statList <- statList[which(names(statList) != "-")]
 			} else {
-				noSymbol <- common		
+				noSymbol <- NULL
 			}
-		} else {
-			noSymbol <- NULL
-		}
-		progress$inc(0.2)
+			progress$inc(0.2)
 
-		## Summarize statistics for genes with UNavailable Symbol
-		## that endured the statistics filtering above.
-		## If not left assign NULL
-		if (length(noSymbol)) {
-			statSumTempNo <- lapply(noSymbol, function(x) {
+			## Summarize statistics for genes with UNavailable Symbol
+			if (length(noSymbol)) {
+				statSumTempNo <- lapply(noSymbol, function(x) {
+					## Orientation
+					orient0 <- sign(x$log2FC)
+					orient <- table(orient0)
+
+					if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+						out <- NA
+					} else {
+						orient <- orient[which(orient == max(orient))]
+						orient <- as.numeric(names(orient))
+
+						if (orient == 1) {
+							orientFinal <- "Upregulated"
+						} else if (orient == -1) {
+							orientFinal <- "Downregulated"
+						} else {
+							orientFinal <- "-"	# Useless, but ...
+						}
+
+						## Keep proper orientation datasets
+						keep <- which(orient0 == orient)
+						nDatasetsFinal <- length(keep)
+
+						## Calculate ave log2FC
+						log2FcAve <- mean(x[keep, "log2FC"])
+
+						## Get p-value threshold
+						pvalThres <- datasetVals$pval
+						# pvalThres <- 0.05
+
+						## Out
+						out <- data.frame(
+							Name= unique(x$Name),
+							Code= unique(x$Code),
+							log2FcAve= log2FcAve,
+							pvalThres= pvalThres,
+							stringsAsFactors= TRUE
+						)
+					}
+					return(out)	
+				})
+				if (any(is.na(statSumTempNo))) {
+					drop <- which(is.na(statSumTempNo))
+					statSumTempNo <- statSumTempNo[-drop]
+				} 
+				statSumTempNo <- do.call("rbind", statSumTempNo)
+			} else {
+				statSumTempNo <- NULL
+			}
+			progress$inc(0.2)
+
+			## Summarize statistics for genes with available Symbol
+			statSumTemp <- lapply(statList, function(x) {
+
 				## Orientation
 				orient0 <- sign(x$log2FC)
 				orient <- table(orient0)
@@ -824,107 +996,237 @@ shinyServer(function(input, output, session) {
 						stringsAsFactors= TRUE
 					)
 				}
-				return(out)	
+				return(out)
 			})
-			if (any(is.na(statSumTempNo))) {
-				drop <- which(is.na(statSumTempNo))
-				statSumTempNo <- statSumTempNo[-drop]
+			if (any(is.na(statSumTemp))) {
+				drop <- which(is.na(statSumTemp))
+				statSumTemp <- statSumTemp[-drop]
 			} 
-			statSumTempNo <- do.call("rbind", statSumTempNo)
-		} else {
-			statSumTempNo <- NULL
-		}
-		progress$inc(0.2)
+			statSumTemp <- do.call("rbind", statSumTemp)
+			progress$inc(0.2)
 
-		## Summarize statistics for genes with available Symbol
-		statSumTemp <- lapply(statList, function(x) {
+			## Bind statSumTempNo (if any) and statSumTemp
+			statSumTemp <- rbind(statSumTempNo, statSumTemp)
+			rm(statSumTempNo)
 
-			## Orientation
-			orient0 <- sign(x$log2FC)
-			orient <- table(orient0)
+			## Query gene annotation
+			annot <- dbGetQuery(
+				conn= fibromine_db,
+				statement='
+					SELECT 
+						ENSGid, Chromosome, StartPosition,
+						EndPosition, Biotype
+					FROM
+						GeneAnnotation
+					WHERE
+						ENSGid = :x
+				;',
+				params= list(x= statSumTemp$Code)
+			)
 
-			if (length(orient) > 1 && orient["-1"] == orient["1"]) {
-				out <- NA
-			} else {
-				orient <- orient[which(orient == max(orient))]
-				orient <- as.numeric(names(orient))
+			## Add annotation
+			out <- merge(statSumTemp, annot, by.x= "Code", 
+				by.y= "ENSGid", all.x=TRUE, sort= FALSE
+			)
+			out[which(is.na(out$Chromosome)),
+				c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
+			out <- out[,c(2,1,6,7,8,9,4,5)]
 
-				if (orient == 1) {
-					orientFinal <- "Upregulated"
-				} else if (orient == -1) {
-					orientFinal <- "Downregulated"
+			colnames(out) <- c("Name", "Code", "Chromosome", 
+				"Start", "Stop", "Biotype",
+				"log2FcAve", "pvalThres"
+			)
+			
+			# Gather all shiny inputs and reactivate them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, TRUE)
+			progress$inc(0.2)
+
+		} else { # if datasets from only 1 species were selected
+
+			# Create a progress object
+			progress <- shiny::Progress$new()
+			on.exit(progress$close())
+			progress$set(message = "Integrating data",
+				detail = "All other actions will be currently suspended",
+				value = 0.2
+			)
+
+			# Begin statistics gathering
+			nDatasets <- length(unique(samplesStat()$GSE))
+			statList <- split(samplesStat(), f= samplesStat()$Name)
+
+			## Isolate any genes without Symbol and separate them
+			if (any(names(statList) == "-")) {
+				
+				# Isolate
+				noSymbol <- statList[["-"]]
+				statList <- statList[which(names(statList) != "-")]
+
+				# Genes without Symbol may be expressed by less than 
+				# half of the datasets. Check again for DEGs common 
+				# in at least half the selected datasets
+				freq <- table(noSymbol$Code)
+				common <- names(which(freq >= length(unique(samplesStat()$GSE))*.5))
+
+				# If any gene left
+				if (length(common)) {
+					noSymbol <- noSymbol[which(noSymbol$Code %in% common),]
+					# Separate them by Code
+					noSymbol <- split(noSymbol, f= noSymbol$Code)
 				} else {
-					orientFinal <- "-"	# Useless, but ...
+					noSymbol <- common		
 				}
-
-				## Keep proper orientation datasets
-				keep <- which(orient0 == orient)
-				nDatasetsFinal <- length(keep)
-
-				## Calculate ave log2FC
-				log2FcAve <- mean(x[keep, "log2FC"])
-
-				## Get p-value threshold
-				pvalThres <- datasetVals$pval
-				# pvalThres <- 0.05
-
-				## Out
-				out <- data.frame(
-					Name= unique(x$Name),
-					Code= unique(x$Code),
-					n= nDatasetsFinal,
-					log2FcAve= log2FcAve,
-					pvalThres= pvalThres,
-					stringsAsFactors= TRUE
-				)
+			} else {
+				noSymbol <- NULL
 			}
-			return(out)
-		})
-		if (any(is.na(statSumTemp))) {
-			drop <- which(is.na(statSumTemp))
-			statSumTemp <- statSumTemp[-drop]
-		} 
-		statSumTemp <- do.call("rbind", statSumTemp)
-		progress$inc(0.2)
+			progress$inc(0.2)
 
-		## Bind statSumTempNo (if any) and statSumTemp
-		statSumTemp <- rbind(statSumTempNo, statSumTemp)
-		rm(statSumTempNo)
+			## Summarize statistics for genes with UNavailable Symbol
+			## that endured the statistics filtering above.
+			## If not left assign NULL
+			if (length(noSymbol)) {
+				statSumTempNo <- lapply(noSymbol, function(x) {
+					## Orientation
+					orient0 <- sign(x$log2FC)
+					orient <- table(orient0)
 
-		## Query gene annotation
-		annot <- dbGetQuery(
-			conn= fibromine_db,
-			statement='
-				SELECT 
-					ENSGid, Chromosome, StartPosition,
-					EndPosition, Biotype
-				FROM
-					GeneAnnotation
-				WHERE
-					ENSGid = :x
-			;',
-			params= list(x= statSumTemp$Code)
-		)
+					if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+						out <- NA
+					} else {
+						orient <- orient[which(orient == max(orient))]
+						orient <- as.numeric(names(orient))
 
-		## Add annotation
-		out <- merge(statSumTemp, annot, by.x= "Code", 
-			by.y= "ENSGid", all.x=TRUE, sort= FALSE
-		)
-		out[which(is.na(out$Chromosome)),
-			c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
-		out <- out[,c(2,1,6,7,8,9,3,4,5)]
+						if (orient == 1) {
+							orientFinal <- "Upregulated"
+						} else if (orient == -1) {
+							orientFinal <- "Downregulated"
+						} else {
+							orientFinal <- "-"	# Useless, but ...
+						}
 
-		colnames(out) <- c("Name", "Code",
-			"Chromosome", "Start", "Stop", "Biotype",
-			paste0("Out of ", nDatasets, " Datasets"),
-			"log2FcAve", "pvalThres"
-		)
+						## Keep proper orientation datasets
+						keep <- which(orient0 == orient)
+						nDatasetsFinal <- length(keep)
 
-		# Gather all shiny inputs and reactivate them
-		input_list <- reactiveValuesToList(input)
-		toggle_inputs(input_list, TRUE)
-		progress$inc(0.2)
+						## Calculate ave log2FC
+						log2FcAve <- mean(x[keep, "log2FC"])
 
+						## Get p-value threshold
+						pvalThres <- datasetVals$pval
+						# pvalThres <- 0.05
+
+						## Out
+						out <- data.frame(
+							Name= unique(x$Name),
+							Code= unique(x$Code),
+							n= nDatasetsFinal,
+							log2FcAve= log2FcAve,
+							pvalThres= pvalThres,
+							stringsAsFactors= TRUE
+						)
+					}
+					return(out)	
+				})
+				if (any(is.na(statSumTempNo))) {
+					drop <- which(is.na(statSumTempNo))
+					statSumTempNo <- statSumTempNo[-drop]
+				} 
+				statSumTempNo <- do.call("rbind", statSumTempNo)
+			} else {
+				statSumTempNo <- NULL
+			}
+			progress$inc(0.2)
+			
+			## Summarize statistics for genes with available Symbol
+			statSumTemp <- lapply(statList, function(x) {
+
+				## Orientation
+				orient0 <- sign(x$log2FC)
+				orient <- table(orient0)
+
+				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+					out <- NA
+				} else {
+					orient <- orient[which(orient == max(orient))]
+					orient <- as.numeric(names(orient))
+
+					if (orient == 1) {
+						orientFinal <- "Upregulated"
+					} else if (orient == -1) {
+						orientFinal <- "Downregulated"
+					} else {
+						orientFinal <- "-"	# Useless, but ...
+					}
+
+					## Keep proper orientation datasets
+					keep <- which(orient0 == orient)
+					nDatasetsFinal <- length(keep)
+
+					## Calculate ave log2FC
+					log2FcAve <- mean(x[keep, "log2FC"])
+
+					## Get p-value threshold
+					pvalThres <- datasetVals$pval
+					# pvalThres <- 0.05
+
+					## Out
+					out <- data.frame(
+						Name= unique(x$Name),
+						Code= unique(x$Code),
+						n= nDatasetsFinal,
+						log2FcAve= log2FcAve,
+						pvalThres= pvalThres,
+						stringsAsFactors= TRUE
+					)
+				}
+				return(out)
+			})
+			if (any(is.na(statSumTemp))) {
+				drop <- which(is.na(statSumTemp))
+				statSumTemp <- statSumTemp[-drop]
+			} 
+			statSumTemp <- do.call("rbind", statSumTemp)
+			progress$inc(0.2)
+
+			## Bind statSumTempNo (if any) and statSumTemp
+			statSumTemp <- rbind(statSumTempNo, statSumTemp)
+			rm(statSumTempNo)
+
+			## Query gene annotation
+			annot <- dbGetQuery(
+				conn= fibromine_db,
+				statement='
+					SELECT 
+						ENSGid, Chromosome, StartPosition,
+						EndPosition, Biotype
+					FROM
+						GeneAnnotation
+					WHERE
+						ENSGid = :x
+				;',
+				params= list(x= statSumTemp$Code)
+			)
+
+			## Add annotation
+			out <- merge(statSumTemp, annot, by.x= "Code", 
+				by.y= "ENSGid", all.x=TRUE, sort= FALSE
+			)
+			out[which(is.na(out$Chromosome)),
+				c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
+			out <- out[,c(2,1,6,7,8,9,3,4,5)]
+
+			colnames(out) <- c("Name", "Code",
+				"Chromosome", "Start", "Stop", "Biotype",
+				paste0("Out of ", nDatasets, " Datasets"),
+				"log2FcAve", "pvalThres"
+			)
+			
+			# Gather all shiny inputs and reactivate them
+			input_list <- reactiveValuesToList(input)
+			toggle_inputs(input_list, TRUE)
+			progress$inc(0.2)
+		}
 		return(out)
 	})
 
@@ -1062,7 +1364,12 @@ shinyServer(function(input, output, session) {
 		out$Biotype <- as.factor(out$Biotype)
 
 		## Order columns
-		out <- out[,c(1,2,3,10,6:9)]
+		## Check the selection of datasets from >1 species
+		if (length(unique(transSamplesSelected()$Species)) > 1) {
+			out <- out[,c(1,2,3,6:9)]
+		} else {
+			out <- out[,c(1,2,3,10,6:9)]
+		}
 
 		dtable <- datatable(data= out, 
 			selection= "none", 
