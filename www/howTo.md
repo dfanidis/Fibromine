@@ -44,7 +44,7 @@
 
 2. Across species consensus differentially expressed genes can be found at the **Transcriptomics summary** tab **(2)**. For data display, only the **human homologues** are presented in (2), with **log2FcAve (6)** column holding the consensus fold change values among the human sampling datasets. The murine counterparts are of the same direction of deregulation (up/down) and can be inspected from the **Transcriptomics analytically** tab **(4)**. **Proteomics summary** tab **(3)** presents the differentially expressed proteins, if any, coded by the genes of *Transcriptomics summary* tab. 
 
-	**Out of ... Datasets** column is **not** implemented as in the integration of single species datasets, because all selected datasets are taken into consideration (see Docs for mor details). **p-value and FC thresholds (7)** can still be fine-tuned.
+	Analysis can be further fine-tuned using the **Out of ... Datasets (5)** column (see Docs for more details), as well as by changing the default **p-value and FC thresholds (7)**.
 
 	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2).
 

@@ -42,12 +42,12 @@ Finally, through *Dataset explorer* one can plot per a dataset heatmap and volca
 In this case, a gene is defined as **consensus deregulated** if:
 
 1. there is an **1:1 human:mouse homology**,
-2. it has been found differentially expressed in **both human and mouse** datasets selected
+2. it has been found differentially expressed **in at least half** of the selected **human and mouse** datasets (separate per-species calculation)
 
 These features are presented as in the case of single species integration, with only two exceptions:
 
 1. *Transcriptomics summary* table summarizes and presents only the **human** member of across-species consensus deregulated genes   
-2. "Out of ... datasets" column is **not** displayed as all human datasets selected are used to calculate each gene's consensus direction and size of deregulation, displayed at **log2FcAve** column of *Transcriptomics summary* table
+2. **"Out of ... datasets"** column refers to the number of **human datasets** 
 
 Across-species consistently deregulated genes (both human and murine) can be inspected **analytically** at *Transcriptomic datasets* > *DEA statistics* > *Transcriptomics analytically tab*
 

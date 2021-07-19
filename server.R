@@ -713,6 +713,20 @@ shinyServer(function(input, output, session) {
 			stats <- do.call("rbind", stats)
 			rownames(stats) <- NULL
 
+			# Keep DEGs common in at least half of the selected datasets
+			# (separately for human and mouse genes)
+			statsHsa <- stats[grep("^ENSG", stats$Code),]
+			freq <- table(statsHsa$Name)
+			common <- names(which(freq >= length(unique(statsHsa$GSE))*.5))
+			statsHsa <- statsHsa[which(statsHsa$Name %in% common),]
+
+			statsMmu <- stats[grep("^ENSM", stats$Code),]
+			freq <- table(statsMmu$Name)
+			common <- names(which(freq >= length(unique(statsMmu$GSE))*.5))
+			statsMmu <- statsMmu[which(statsMmu$Name %in% common),]
+
+			stats <- rbind(statsHsa, statsMmu)
+
 			## Keep common cross-Species genes and drop the homologGene column
 			kUp <- intersect(
 				stats[stats$homologGene != "-" & stats$log2FC > 0, "homologGene"],
@@ -890,6 +904,7 @@ shinyServer(function(input, output, session) {
 			# Begin statistics gathering
 			# Keep hsa genes
 			statList <- samplesStat()[grep("^ENSG", samplesStat()$Code),]
+			nDatasets <- length(unique(statList$GSE))
 			statList <- split(statList, statList$Name)
 
 			## Isolate any genes without Symbol and separate them
@@ -937,6 +952,7 @@ shinyServer(function(input, output, session) {
 						out <- data.frame(
 							Name= unique(x$Name),
 							Code= unique(x$Code),
+							n= nDatasetsFinal,
 							log2FcAve= log2FcAve,
 							pvalThres= pvalThres,
 							stringsAsFactors= TRUE
@@ -957,6 +973,11 @@ shinyServer(function(input, output, session) {
 			## Summarize statistics for genes with available Symbol
 			statSumTemp <- lapply(statList, function(x) {
 
+				# For safety reasons
+				# In some rare cases a handfull of genes reach this point 
+				# with multiple identical dataset entries 
+				x <- unique(x)
+			
 				## Orientation
 				orient0 <- sign(x$log2FC)
 				orient <- table(orient0)
@@ -1030,10 +1051,11 @@ shinyServer(function(input, output, session) {
 			)
 			out[which(is.na(out$Chromosome)),
 				c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
-			out <- out[,c(2,1,6,7,8,9,4,5)]
+			out <- out[,c(2,1,6,7,8,9,3,4,5)]
 
 			colnames(out) <- c("Name", "Code", "Chromosome", 
 				"Start", "Stop", "Biotype",
+				paste0("Out of ", nDatasets, " Datasets"),
 				"log2FcAve", "pvalThres"
 			)
 			
@@ -1140,6 +1162,11 @@ shinyServer(function(input, output, session) {
 			
 			## Summarize statistics for genes with available Symbol
 			statSumTemp <- lapply(statList, function(x) {
+
+				# For safety reasons
+				# In some rare cases a handfull of genes reach this point 
+				# with multiple identical dataset entries 
+				x <- unique(x)
 
 				## Orientation
 				orient0 <- sign(x$log2FC)
