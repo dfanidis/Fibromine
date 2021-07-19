@@ -14,7 +14,7 @@
 
 	Analysis can be further fine-tuned using the **Out of ... Datasets (5)** column (see Docs for mor details), as well as by changing the default **p-value and FC thresholds (7)**.
 
-	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2).   
+	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2). The gene groups used as background for the analysis can be filtered from within the results table **(9)**. 
 
 	<a href= "howToScreenshots/datasetExpl2.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./howToScreenshots/datasetExpl2.png" alt="image" style="width:900px;height:650px" class="center"/>
@@ -46,7 +46,7 @@
 
 	Analysis can be further fine-tuned using the **Out of ... Datasets (5)** column (see Docs for more details), as well as by changing the default **p-value and FC thresholds (7)**.
 
-	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2).
+	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2). The gene groups used as background for the analysis can be filtered from within the results table **(9)**.
 
 	<a href= "howToScreenshots/datasetExpl7.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./howToScreenshots/datasetExpl7.png" alt="image" style="width:900px;height:650px" class="center"/>
