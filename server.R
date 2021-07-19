@@ -46,11 +46,11 @@ shinyServer(function(input, output, session) {
                 	"feature enables the acquisition of normalized gene expression data per dataset.",
                 	"Proteomics data per dataset are also available for download."
                 ),
-                paste("Detailed info about Fibromine explorers and their back-end processing can",
-                	"be found in the <b>Docs</b> section"
-                ),
 				paste("<b>How to</b> tab holds a visual guide for almost all Fibromine's features and analysis",
                 	"results. Check it out!"
+                ),
+                paste("Detailed info about Fibromine explorers and their back-end processing can",
+                	"be found in the <b>Docs</b> section"
                 ),
                 paste("Designed and implemented by <b>Dionysios Fanidis</b>.<br />",
                 	"Supervised by <b>Panagiotis Moulos</b> & <b>Vassilis Aidinis</b>"

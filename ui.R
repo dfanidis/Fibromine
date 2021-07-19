@@ -41,8 +41,8 @@ shinyUI(dashboardPage(
 			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_5"),
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_6"),
-			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_7"),
-			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")) %>% add_class("step_8"),
+			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")) %>% add_class("step_7"),
+			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_8"),
 
 			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_9"),
 			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_10")
@@ -1426,23 +1426,23 @@ shinyUI(dashboardPage(
 			),
 
 			# ============================================================================
-			# Documentation tab
-			# ============================================================================
-			tabItem(tabName= "Docs",
-				wellPanel(
-					fluidRow(
-						includeMarkdown("./www/docs.md")
-					)
-				)
-			),
-
-			# ============================================================================
 			# How to tab
 			# ============================================================================
 			tabItem(tabName= "HowTo",
 				wellPanel(
 					fluidRow(
 						includeMarkdown("./www/howTo.md")
+					)
+				)
+			),
+
+			# ============================================================================
+			# Documentation tab
+			# ============================================================================
+			tabItem(tabName= "Docs",
+				wellPanel(
+					fluidRow(
+						includeMarkdown("./www/docs.md")
 					)
 				)
 			)
