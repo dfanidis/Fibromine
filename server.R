@@ -611,7 +611,7 @@ shinyServer(function(input, output, session) {
 		# Create a progress object
 		progress <- shiny::Progress$new()
 		on.exit(progress$close())
-		progress$set(message = "Fetching data", 
+		progress$set(message = "Fetching and integrating data", 
 			detail = "All other actions will be currently suspended", 
 			value = 0.25
 		)
@@ -708,40 +708,84 @@ shinyServer(function(input, output, session) {
 					stat_temp$homologGene <- "-"
 				}
 				stats[[i]] <- stat_temp
-				progress$inc(0.25)
+				progress$inc(0.5)
 			}
 			stats <- do.call("rbind", stats)
 			rownames(stats) <- NULL
 
-			# Keep DEGs common in at least half of the selected datasets
-			# (separately for human and mouse genes)
+			## Remove any gene without a HGNC symbol
+			stats <- stats[stats$Name != "-",]
+
+			# Keep DEGs common in at least half of the selected human datasets
 			statsHsa <- stats[grep("^ENSG", stats$Code),]
-			freq <- table(statsHsa$Name)
-			common <- names(which(freq >= length(unique(statsHsa$GSE))*.5))
-			statsHsa <- statsHsa[which(statsHsa$Name %in% common),]
+			commonHsa <- split(statsHsa, f = statsHsa$Code)
+			commonHsa <- lapply(commonHsa, function(x){
+				
+				nDatasets <- nrow(transSamplesSelected()[transSamplesSelected()$Species == "Homo sapiens", ])
+				orient0 <- sign(x$log2FC)
+				orient <- table(orient0)
+				orient <- orient[which(orient == max(orient))]
+				orientDir <- as.numeric(names(orient))
+				orientFreq <- as.numeric(orient) 
 
+				# Remove genes who are found in 2 datasets with inconsistent
+				# direction of deregulation
+				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+					return(NA)
+				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])
+				} else { # else NA
+					return(NA)
+				}
+
+			})
+			commonHsa[is.na(commonHsa)] <- NULL
+			commonHsa <- do.call("rbind", commonHsa)
+
+			# Keep DEGs common in at least half of the selected human datasets
 			statsMmu <- stats[grep("^ENSM", stats$Code),]
-			freq <- table(statsMmu$Name)
-			common <- names(which(freq >= length(unique(statsMmu$GSE))*.5))
-			statsMmu <- statsMmu[which(statsMmu$Name %in% common),]
+			commonMmu <- split(statsMmu, f = statsMmu$Code)
+			commonMmu <- lapply(commonMmu, function(x){
+				
+				nDatasets <- nrow(transSamplesSelected()[transSamplesSelected()$Species == "Mus musculus", ])
+				orient0 <- sign(x$log2FC)
+				orient <- table(orient0)
+				orient <- orient[which(orient == max(orient))]
+				orientDir <- as.numeric(names(orient))
+				orientFreq <- as.numeric(orient) 
 
-			stats <- rbind(statsHsa, statsMmu)
+				# Remove genes who are found in 2 datasets with inconsistent
+				# direction of deregulation
+				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+					return(NA)
+				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])
+				} else { # else NA
+					return(NA)
+				}
+
+			})
+			commonMmu[is.na(commonMmu)] <- NULL
+			commonMmu <- do.call("rbind", commonMmu)
+
+			## Merge the two tables
+			common <- rbind(commonHsa, commonMmu)
 
 			## Keep common cross-Species genes and drop the homologGene column
 			kUp <- intersect(
-				stats[stats$homologGene != "-" & stats$log2FC > 0, "homologGene"],
-				stats[stats$homologGene == "-" & stats$log2FC > 0, "Code"]
+				common[common$homologGene != "-" & common$log2FC > 0, "homologGene"],
+				common[common$homologGene == "-" & common$log2FC > 0, "Code"]
 			)
 			kDw <- intersect(
-				stats[stats$homologGene != "-" & stats$log2FC < 0, "homologGene"],
-				stats[stats$homologGene == "-" & stats$log2FC < 0, "Code"]
+				common[common$homologGene != "-" & common$log2FC < 0, "homologGene"],
+				common[common$homologGene == "-" & common$log2FC < 0, "Code"]
 			)
 
 			out <- rbind(
-				stats[stats$homologGene %in% kUp,  1:7],
-				stats[stats$homologGene %in% kDw,  1:7],
-				stats[stats$Code %in% kUp, 1:7],
-				stats[stats$Code %in% kDw, 1:7]
+				common[common$homologGene %in% kUp, 1:7],
+				common[common$homologGene %in% kDw, 1:7],
+				common[common$Code %in% kUp, 1:7],
+				common[common$Code %in% kDw, 1:7]
 			)
 			progress$inc(0.25)
 		} else {
@@ -808,7 +852,7 @@ shinyServer(function(input, output, session) {
 					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
 
 					stats[[i]] <- stat_temp
-					progress$inc(0.25)
+					progress$inc(0.5)
 
 				} else {
 
@@ -872,17 +916,42 @@ shinyServer(function(input, output, session) {
 					colnames(stat_temp)[c(1,2,7)] <- c("Name", "Code", "Comparison")
 
 					stats[[i]] <- stat_temp
-					progress$inc(0.25)
+					progress$inc(0.5)
 				}
 
 			}
 			stats <- do.call("rbind", stats)
 			rownames(stats) <- NULL
 
-			## Keep DEGs common in at least half the selected datasets
-			freq <- table(stats$Name)
-			common <- names(which(freq >= length(unique(stats$GSE))*.5))
-			out <- stats[which(stats$Name %in% common),]
+			## Remove any gene without a HGNC symbol
+			stats <- stats[stats$Name != "-",]
+
+			## Keep DEGs consistently deregulated in at least half 
+			## the selected datasets
+			common <- split(stats, f = stats$Code)
+			common <- lapply(common, function(x){
+				
+				nDatasets <- nrow(transSamplesSelected())
+				orient0 <- sign(x$log2FC)
+				orient <- table(orient0)
+				orient <- orient[which(orient == max(orient))]
+				orientDir <- as.numeric(names(orient))
+				orientFreq <- as.numeric(orient) 
+
+				# Remove genes who are found in 2 datasets with inconsistent
+				# direction of deregulation
+				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
+					return(NA)
+				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])
+				} else { # else NA
+					return(NA)
+				}
+
+			})
+			common[is.na(common)] <- NULL
+			out <- do.call("rbind", common)
+			rownames(out) <- NULL 
 			progress$inc(0.25)
 		}
 		return(out)
@@ -890,370 +959,93 @@ shinyServer(function(input, output, session) {
 
 	statSum <- eventReactive(samplesStat(), {
 
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+
+		# Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(message = "Preparing data for display",
+			detail = "All other actions will be currently suspended",
+			value = 0.2
+		)
+
 		# Check the selection of datasets from >1 species
 		if (length(unique(transSamplesSelected()$Species)) > 1) {
-
-			# Create a progress object
-			progress <- shiny::Progress$new()
-			on.exit(progress$close())
-			progress$set(message = "Integrating data",
-				detail = "All other actions will be currently suspended",
-				value = 0.2
-			)
-
-			# Begin statistics gathering
 			# Keep hsa genes
 			statList <- samplesStat()[grep("^ENSG", samplesStat()$Code),]
-			nDatasets <- length(unique(statList$GSE))
+			# Count only the human datasets
+			nDatasets <- nrow(transSamplesSelected()[transSamplesSelected()$Species == "Homo sapiens", ])
 			statList <- split(statList, statList$Name)
-
-			## Isolate any genes without Symbol and separate them
-			if (any(names(statList) == "-")) {
-				noSymbol <- statList[["-"]]
-				statList <- statList[which(names(statList) != "-")]
-			} else {
-				noSymbol <- NULL
-			}
-			progress$inc(0.2)
-
-			## Summarize statistics for genes with UNavailable Symbol
-			if (length(noSymbol)) {
-				statSumTempNo <- lapply(noSymbol, function(x) {
-					## Orientation
-					orient0 <- sign(x$log2FC)
-					orient <- table(orient0)
-
-					if (length(orient) > 1 && orient["-1"] == orient["1"]) {
-						out <- NA
-					} else {
-						orient <- orient[which(orient == max(orient))]
-						orient <- as.numeric(names(orient))
-
-						if (orient == 1) {
-							orientFinal <- "Upregulated"
-						} else if (orient == -1) {
-							orientFinal <- "Downregulated"
-						} else {
-							orientFinal <- "-"	# Useless, but ...
-						}
-
-						## Keep proper orientation datasets
-						keep <- which(orient0 == orient)
-						nDatasetsFinal <- length(keep)
-
-						## Calculate ave log2FC
-						log2FcAve <- mean(x[keep, "log2FC"])
-
-						## Get p-value threshold
-						pvalThres <- datasetVals$pval
-						# pvalThres <- 0.05
-
-						## Out
-						out <- data.frame(
-							Name= unique(x$Name),
-							Code= unique(x$Code),
-							n= nDatasetsFinal,
-							log2FcAve= log2FcAve,
-							pvalThres= pvalThres,
-							stringsAsFactors= TRUE
-						)
-					}
-					return(out)	
-				})
-				if (any(is.na(statSumTempNo))) {
-					drop <- which(is.na(statSumTempNo))
-					statSumTempNo <- statSumTempNo[-drop]
-				} 
-				statSumTempNo <- do.call("rbind", statSumTempNo)
-			} else {
-				statSumTempNo <- NULL
-			}
-			progress$inc(0.2)
-
-			## Summarize statistics for genes with available Symbol
-			statSumTemp <- lapply(statList, function(x) {
-
-				# For safety reasons
-				# In some rare cases a handfull of genes reach this point 
-				# with multiple identical dataset entries 
-				x <- unique(x)
-			
-				## Orientation
-				orient0 <- sign(x$log2FC)
-				orient <- table(orient0)
-
-				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
-					out <- NA
-				} else {
-					orient <- orient[which(orient == max(orient))]
-					orient <- as.numeric(names(orient))
-
-					if (orient == 1) {
-						orientFinal <- "Upregulated"
-					} else if (orient == -1) {
-						orientFinal <- "Downregulated"
-					} else {
-						orientFinal <- "-"	# Useless, but ...
-					}
-
-					## Keep proper orientation datasets
-					keep <- which(orient0 == orient)
-					nDatasetsFinal <- length(keep)
-
-					## Calculate ave log2FC
-					log2FcAve <- mean(x[keep, "log2FC"])
-
-					## Get p-value threshold
-					pvalThres <- datasetVals$pval
-					# pvalThres <- 0.05
-
-					## Out
-					out <- data.frame(
-						Name= unique(x$Name),
-						Code= unique(x$Code),
-						n= nDatasetsFinal,
-						log2FcAve= log2FcAve,
-						pvalThres= pvalThres,
-						stringsAsFactors= TRUE
-					)
-				}
-				return(out)
-			})
-			if (any(is.na(statSumTemp))) {
-				drop <- which(is.na(statSumTemp))
-				statSumTemp <- statSumTemp[-drop]
-			} 
-			statSumTemp <- do.call("rbind", statSumTemp)
-			progress$inc(0.2)
-
-			## Bind statSumTempNo (if any) and statSumTemp
-			statSumTemp <- rbind(statSumTempNo, statSumTemp)
-			rm(statSumTempNo)
-
-			## Query gene annotation
-			annot <- dbGetQuery(
-				conn= fibromine_db,
-				statement='
-					SELECT 
-						ENSGid, Chromosome, StartPosition,
-						EndPosition, Biotype
-					FROM
-						GeneAnnotation
-					WHERE
-						ENSGid = :x
-				;',
-				params= list(x= statSumTemp$Code)
-			)
-
-			## Add annotation
-			out <- merge(statSumTemp, annot, by.x= "Code", 
-				by.y= "ENSGid", all.x=TRUE, sort= FALSE
-			)
-			out[which(is.na(out$Chromosome)),
-				c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
-			out <- out[,c(2,1,6,7,8,9,3,4,5)]
-
-			colnames(out) <- c("Name", "Code", "Chromosome", 
-				"Start", "Stop", "Biotype",
-				paste0("Out of ", nDatasets, " Datasets"),
-				"log2FcAve", "pvalThres"
-			)
-			
-			# Gather all shiny inputs and reactivate them
-			input_list <- reactiveValuesToList(input)
-			toggle_inputs(input_list, TRUE)
-			progress$inc(0.2)
-
-		} else { # if datasets from only 1 species were selected
-
-			# Create a progress object
-			progress <- shiny::Progress$new()
-			on.exit(progress$close())
-			progress$set(message = "Integrating data",
-				detail = "All other actions will be currently suspended",
-				value = 0.2
-			)
-
-			# Begin statistics gathering
-			nDatasets <- length(unique(samplesStat()$GSE))
+		} else {
+			nDatasets <- nrow(transSamplesSelected())
 			statList <- split(samplesStat(), f= samplesStat()$Name)
-
-			## Isolate any genes without Symbol and separate them
-			if (any(names(statList) == "-")) {
-				
-				# Isolate
-				noSymbol <- statList[["-"]]
-				statList <- statList[which(names(statList) != "-")]
-
-				# Genes without Symbol may be expressed by less than 
-				# half of the datasets. Check again for DEGs common 
-				# in at least half the selected datasets
-				freq <- table(noSymbol$Code)
-				common <- names(which(freq >= length(unique(samplesStat()$GSE))*.5))
-
-				# If any gene left
-				if (length(common)) {
-					noSymbol <- noSymbol[which(noSymbol$Code %in% common),]
-					# Separate them by Code
-					noSymbol <- split(noSymbol, f= noSymbol$Code)
-				} else {
-					noSymbol <- common		
-				}
-			} else {
-				noSymbol <- NULL
-			}
-			progress$inc(0.2)
-
-			## Summarize statistics for genes with UNavailable Symbol
-			## that endured the statistics filtering above.
-			## If not left assign NULL
-			if (length(noSymbol)) {
-				statSumTempNo <- lapply(noSymbol, function(x) {
-					## Orientation
-					orient0 <- sign(x$log2FC)
-					orient <- table(orient0)
-
-					if (length(orient) > 1 && orient["-1"] == orient["1"]) {
-						out <- NA
-					} else {
-						orient <- orient[which(orient == max(orient))]
-						orient <- as.numeric(names(orient))
-
-						if (orient == 1) {
-							orientFinal <- "Upregulated"
-						} else if (orient == -1) {
-							orientFinal <- "Downregulated"
-						} else {
-							orientFinal <- "-"	# Useless, but ...
-						}
-
-						## Keep proper orientation datasets
-						keep <- which(orient0 == orient)
-						nDatasetsFinal <- length(keep)
-
-						## Calculate ave log2FC
-						log2FcAve <- mean(x[keep, "log2FC"])
-
-						## Get p-value threshold
-						pvalThres <- datasetVals$pval
-						# pvalThres <- 0.05
-
-						## Out
-						out <- data.frame(
-							Name= unique(x$Name),
-							Code= unique(x$Code),
-							n= nDatasetsFinal,
-							log2FcAve= log2FcAve,
-							pvalThres= pvalThres,
-							stringsAsFactors= TRUE
-						)
-					}
-					return(out)	
-				})
-				if (any(is.na(statSumTempNo))) {
-					drop <- which(is.na(statSumTempNo))
-					statSumTempNo <- statSumTempNo[-drop]
-				} 
-				statSumTempNo <- do.call("rbind", statSumTempNo)
-			} else {
-				statSumTempNo <- NULL
-			}
-			progress$inc(0.2)
-			
-			## Summarize statistics for genes with available Symbol
-			statSumTemp <- lapply(statList, function(x) {
-
-				# For safety reasons
-				# In some rare cases a handfull of genes reach this point 
-				# with multiple identical dataset entries 
-				x <- unique(x)
-
-				## Orientation
-				orient0 <- sign(x$log2FC)
-				orient <- table(orient0)
-
-				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
-					out <- NA
-				} else {
-					orient <- orient[which(orient == max(orient))]
-					orient <- as.numeric(names(orient))
-
-					if (orient == 1) {
-						orientFinal <- "Upregulated"
-					} else if (orient == -1) {
-						orientFinal <- "Downregulated"
-					} else {
-						orientFinal <- "-"	# Useless, but ...
-					}
-
-					## Keep proper orientation datasets
-					keep <- which(orient0 == orient)
-					nDatasetsFinal <- length(keep)
-
-					## Calculate ave log2FC
-					log2FcAve <- mean(x[keep, "log2FC"])
-
-					## Get p-value threshold
-					pvalThres <- datasetVals$pval
-					# pvalThres <- 0.05
-
-					## Out
-					out <- data.frame(
-						Name= unique(x$Name),
-						Code= unique(x$Code),
-						n= nDatasetsFinal,
-						log2FcAve= log2FcAve,
-						pvalThres= pvalThres,
-						stringsAsFactors= TRUE
-					)
-				}
-				return(out)
-			})
-			if (any(is.na(statSumTemp))) {
-				drop <- which(is.na(statSumTemp))
-				statSumTemp <- statSumTemp[-drop]
-			} 
-			statSumTemp <- do.call("rbind", statSumTemp)
-			progress$inc(0.2)
-
-			## Bind statSumTempNo (if any) and statSumTemp
-			statSumTemp <- rbind(statSumTempNo, statSumTemp)
-			rm(statSumTempNo)
-
-			## Query gene annotation
-			annot <- dbGetQuery(
-				conn= fibromine_db,
-				statement='
-					SELECT 
-						ENSGid, Chromosome, StartPosition,
-						EndPosition, Biotype
-					FROM
-						GeneAnnotation
-					WHERE
-						ENSGid = :x
-				;',
-				params= list(x= statSumTemp$Code)
-			)
-
-			## Add annotation
-			out <- merge(statSumTemp, annot, by.x= "Code", 
-				by.y= "ENSGid", all.x=TRUE, sort= FALSE
-			)
-			out[which(is.na(out$Chromosome)),
-				c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
-			out <- out[,c(2,1,6,7,8,9,3,4,5)]
-
-			colnames(out) <- c("Name", "Code",
-				"Chromosome", "Start", "Stop", "Biotype",
-				paste0("Out of ", nDatasets, " Datasets"),
-				"log2FcAve", "pvalThres"
-			)
-			
-			# Gather all shiny inputs and reactivate them
-			input_list <- reactiveValuesToList(input)
-			toggle_inputs(input_list, TRUE)
-			progress$inc(0.2)
 		}
+		progress$inc(0.2)
+
+		## Summarize statistics
+		statSumTemp <- lapply(statList, function(x) {
+
+			# For safety reasons
+			# In some rare cases a handfull of genes reach this point 
+			# with multiple identical dataset entries 
+			x <- unique(x)
+
+			## Calculate ave log2FC
+			log2FcAve <- mean(x[, "log2FC"])
+
+			## Get p-value threshold
+			pvalThres <- datasetVals$pval
+			# pvalThres <- 0.05
+
+			## Out
+			out <- data.frame(
+				Name= unique(x$Name),
+				Code= unique(x$Code),
+				n= nrow(x),
+				log2FcAve= log2FcAve,
+				pvalThres= pvalThres,
+				stringsAsFactors= TRUE
+			)
+			return(out)
+		})
+		statSumTemp <- do.call("rbind", statSumTemp)
+		progress$inc(0.2)
+
+		## Query gene annotation
+		annot <- dbGetQuery(
+			conn= fibromine_db,
+			statement='
+				SELECT 
+					ENSGid, Chromosome, StartPosition,
+					EndPosition, Biotype
+				FROM
+					GeneAnnotation
+				WHERE
+					ENSGid = :x
+			;',
+			params= list(x= statSumTemp$Code)
+		)
+
+		## Add annotation
+		out <- merge(statSumTemp, annot, by.x= "Code", 
+			by.y= "ENSGid", all.x=TRUE, sort= FALSE
+		)
+		out[which(is.na(out$Chromosome)),
+			c("Chromosome","StartPosition", "EndPosition", "Biotype")] <- "-"
+		out <- out[,c(2,1,6,7,8,9,3,4,5)]
+
+		colnames(out) <- c("Name", "Code",
+			"Chromosome", "Start", "Stop", "Biotype",
+			paste0("Out of ", nDatasets, " Datasets"),
+			"log2FcAve", "pvalThres"
+		)
+				
+		# Gather all shiny inputs and reactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, TRUE)
+		progress$inc(0.2)
 		return(out)
 	})
 
