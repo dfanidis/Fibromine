@@ -2070,7 +2070,7 @@ shinyServer(function(input, output, session) {
 	## Retrieve DE data
 	protSamplesStat <- eventReactive(protSamplesSelected(), {
 
-		# Gather all shiny inputs and reactivate them
+		# Gather all shiny inputs and deactivate them
 		input_list <- reactiveValuesToList(input)
 		toggle_inputs(input_list, FALSE)
 
@@ -2166,10 +2166,32 @@ shinyServer(function(input, output, session) {
 		protStats <- do.call("rbind", protStats)
 		rownames(protStats) <- NULL
 
-		## Keep DEPs common in at least half the selected datasets
-		protFreq <- table(protStats$"Protein Name")
-		protCommon <- names(which(protFreq >= length(unique(protStats$DatasetID))*.5))
-		out <- protStats[which(protStats$"Protein Name" %in% protCommon),]
+		## Keep DEGs consistently deregulated in at least half 
+		## the selected datasets
+		protCommon <- split(protStats, f = protStats$UniprotAC)
+		protCommon <- lapply(protCommon, function(x){
+					
+			nDatasets <- nrow(protSamplesSelected())
+			orient0 <- x$ExpressionDirection
+			orient <- table(x$ExpressionDirection)
+			orient <- orient[which(orient == max(orient))]
+			orientDir <- names(orient)
+			orientFreq <- as.numeric(orient) 
+
+			# Remove genes who are found in 2 datasets with inconsistent
+			# direction of deregulation
+			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
+				return(NA)
+			} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
+				return(x[which(orient0 == orientDir),])
+			} else { # else NA
+				return(NA)
+			}
+
+		})
+		protCommon[is.na(protCommon)] <- NULL
+		out <- do.call("rbind", protCommon)
+		rownames(out) <- NULL
 		progress$inc(0.50)
 
 		return(out)
@@ -2185,53 +2207,30 @@ shinyServer(function(input, output, session) {
 			value = 0.25
 		)
 
-		nProtDatasets <- length(unique(protSamplesStat()$DatasetID))
+		nDatasets <- nrow(protSamplesSelected())
 		protStatList <- split(protSamplesStat(), f= protSamplesStat()$UniprotAC)
 
-		## Summarize statistics
-		protStatSumTemp <- lapply(protStatList, function(x) {
+		protStatSumTemp <- lapply(protStatList, function(x){
 
-			## Orientation
-			orient <- table(x$ExpressionDirection)
-
-			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
-				out <- NA
-			} else {
-				orient <- orient[which(orient == max(orient))]
-				orient <- names(orient)
-
-				if (orient == "Up") {
-					orientFinal <- "Upregulated"
-				} else if (orient == "Down") {
-					orientFinal <- "Downregulated"
-				} else {
-					orientFinal <- "-"	# Useless, but ...
-				}
-
-				## Keep proper orientation datasets
-				keep <- which(x$ExpressionDirection == orient)
-				nDatasetsFinal <- length(keep)
-
-				## Out
-				out <- data.frame(
-					"Protein Name"= unique(x$"Protein Name"),
-					UniprotAC= unique(x$UniprotAC),
-					n= nDatasetsFinal,
-					ExpressionDirection= orient,
-					Length= unique(x$Length),
-					"Gene symbol"= unique(x$"Gene symbol"),
-					"Gene code"= unique(x$"Gene code"),
-					stringsAsFactors= TRUE 
-				)
-			}
+			out <- data.frame(
+				"Protein Name"= unique(x$"Protein Name"),
+				UniprotAC= unique(x$UniprotAC),
+				n= nrow(x),
+				ExpressionDirection= unique(x$ExpressionDirection),
+				Length= unique(x$Length),
+				"Gene symbol"= unique(x$"Gene symbol"),
+				"Gene code"= unique(x$"Gene code"),
+				stringsAsFactors= TRUE 
+			)
 			return(out)
+
 		})
 		progress$inc(0.25)
 
 		protStatSumTemp[is.na(protStatSumTemp)] <- NULL
 		protStatSumTemp <- do.call("rbind", protStatSumTemp)
 		rownames(protStatSumTemp) <- NULL
-		colnames(protStatSumTemp)[3] <- paste0("Out of ", nProtDatasets,
+		colnames(protStatSumTemp)[3] <- paste0("Out of ", nDatasets,
 			" Datasets")
 		progress$inc(0.50)
 
