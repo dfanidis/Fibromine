@@ -716,7 +716,27 @@ shinyServer(function(input, output, session) {
 			## Remove any gene without a HGNC symbol
 			stats <- stats[stats$Name != "-",]
 
+			## Remove any entry where 2 Ensembl codes match to a single HGNC symbol  
+			## (these are only a handfull per dataset of thousands; if not removed)
+			## "Out of n datasets" column does not function properly
+			d0 <- stats[,c("Name", "Code")]
+			d <- split(d0, f = d0$Name)
+			d <- lapply(d, function(x){
+				if (length(unique(x$Code)) == 1)  {
+					return(NA)
+				} else {
+					return(unique(x$Name))
+				}
+			})
+			d[is.na(d)] <- NULL
+			
+			if (length(d)) {
+				stats <- stats[!(stats$Name %in% d), ]
+			}
+
 			# Keep DEGs common in at least half of the selected human datasets
+			# and not significantly deregulated towards the opposite direction
+			# in the rest of the datasets
 			statsHsa <- stats[grep("^ENSG", stats$Code),]
 			commonHsa <- split(statsHsa, f = statsHsa$Code)
 			commonHsa <- lapply(commonHsa, function(x){
@@ -732,8 +752,10 @@ shinyServer(function(input, output, session) {
 				# direction of deregulation
 				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
 					return(NA)
-				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
-					return(x[which(orient0 == orientDir),])
+				} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove genes that are found DE towards the opposite 
+					return(NA)													# direction in the rest of the datasets
+				} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
 				} else { # else NA
 					return(NA)
 				}
@@ -758,8 +780,10 @@ shinyServer(function(input, output, session) {
 				# direction of deregulation
 				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
 					return(NA)
-				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
-					return(x[which(orient0 == orientDir),])
+				} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove genes that are found DE towards the opposite 
+					return(NA)													# direction in the rest of the datasets
+				} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
 				} else { # else NA
 					return(NA)
 				}
@@ -925,6 +949,24 @@ shinyServer(function(input, output, session) {
 
 			## Remove any gene without a HGNC symbol
 			stats <- stats[stats$Name != "-",]
+			
+			## Remove any entry where 2 Ensembl codes match to a single HGNC symbol  
+			## (these are only a handfull per dataset of thousands; if not removed)
+			## "Out of n datasets" column does not function properly
+			d0 <- stats[,c("Name", "Code")]
+			d <- split(d0, f = d0$Name)
+			d <- lapply(d, function(x){
+				if (length(unique(x$Code)) == 1)  {
+					return(NA)
+				} else {
+					return(unique(x$Name))
+				}
+			})
+			d[is.na(d)] <- NULL
+			
+			if (length(d)) {
+				stats <- stats[!(stats$Name %in% d), ]
+			}
 
 			## Keep DEGs consistently deregulated in at least half 
 			## the selected datasets
@@ -942,8 +984,10 @@ shinyServer(function(input, output, session) {
 				# direction of deregulation
 				if (length(orient) > 1 && orient["-1"] == orient["1"]) {
 					return(NA)
-				} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
-					return(x[which(orient0 == orientDir),])
+				} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove genes that are found DE towards the opposite 
+					return(NA)													# direction in the rest of the datasets
+				} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
 				} else { # else NA
 					return(NA)
 				}
@@ -2182,8 +2226,10 @@ shinyServer(function(input, output, session) {
 			# direction of deregulation
 			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
 				return(NA)
-			} else if (orientFreq >= nDatasets*.5) { # keep those consistently DE in at least half the datasets 
-				return(x[which(orient0 == orientDir),])
+			} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove genes that are found DE towards the opposite 
+				return(NA)													# direction in the rest of the datasets
+			} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+				return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
 			} else { # else NA
 				return(NA)
 			}
