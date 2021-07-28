@@ -1108,32 +1108,149 @@ shinyServer(function(input, output, session) {
 			value = 0.25
 		)
 
-		out <- dbGetQuery(
+		## Get DEP analysis results
+		k <- unique(transSamplesSelected()[, c("DescrContrast", "Tissue")])
+		protStat_temp <- dbGetQuery(
+			conn=fibromine_db,
+			statement= '
+				SELECT 
+					DEP.*, DatasetsDescription.Tissue
+				FROM 
+					DEP JOIN DatasetsDescription
+				ON 
+					DEP.DatasetID = DatasetsDescription.DatasetID 
+				WHERE 
+					DEP.Contrast = :x
+				AND 
+					DatasetsDescription.Tissue = :y
+			;',
+			params= list(
+				x = k$"DescrContrast",
+				y = k$"Tissue"
+			)
+		)
+
+		## Query and process protein annotation
+		protAnnot <- dbGetQuery(
 			conn= fibromine_db,
 			statement= '
-				SELECT
-					GeneAnnotation.Symbol, GeneAnnotation.ENSGid, 
-					DEP.DatasetID, ExpressionDirection, DEP.Contrast,
-					DatasetsDescription.Tissue	 
+				SELECT 
+					Uniprot.UniprotAC, Length, Names,
+					GeneAnnotation.Symbol, GeneAnnotation.ENSGid
 				FROM 
-					GeneAnnotation JOIN ENSGid2UniP JOIN DEP JOIN DatasetsDescription
-				ON
-					GeneAnnotation.ENSGid = ENSGid2UniP.ENSGid
-				AND 
-					ENSGid2UniP.UniprotAC = DEP.UniprotAC
-				AND 
-					DEP.DatasetID = DatasetsDescription.DatasetID 
+					Uniprot JOIN ENSGid2UniP JOIN GeneAnnotation
+					ON
+					Uniprot.UniprotAC = ENSGid2UniP.UniprotAC 
+						AND 
+					ENSGid2UniP.ENSGid = GeneAnnotation.ENSGid
 				WHERE
-					GeneAnnotation.ENSGid = :x
+					Uniprot.UniprotAC = :x
 			;',
-			params= list(x= statSum()$Code)
+			params= list(
+				x= protStat_temp$UniprotAC
+			)
 		)
-		progress$inc(0.50)			
+		protAnnot <- split(protAnnot, f = protAnnot$UniprotAC)
 
-		out <- out[out$Contrast %in% transSamplesSelected()[,"DescrContrast"], ]
-		out <- out[out$Tissue %in% transSamplesSelected()[,"Tissue"], ]
-		colnames(out)[1:2] <- c("Name", "Code")
-		progress$inc(0.25)			
+		protAnnot <- lapply(protAnnot, function(x){
+
+			# Get rid of the same protein annotation called multiple times
+			# due to its existence in >1 datasets in protStat_temp
+			x <- unique(x)
+
+			# Keep and rectify the primary protein name given by Uniprot
+			temp <- strsplit(x$Names, split= "|||",
+				fixed= TRUE)
+			x$Names <- temp[[1]][1]
+			x$Names <- gsub("\\{.*\\}", "", x$Names)
+			
+			# In the case of a one:many Uniprot:Symbol relationship
+			if (nrow(x) > 1) {
+				x <- data.frame(
+					UniprotAC= unique(x$UniprotAC),
+					Length= unique(x$Length),
+					Names= unique(x$Names),
+					Symbol= paste(x$Symbol, collapse= "|||"),
+					ENSGid= paste(x$ENSGid, collapse= "|||")
+				)
+			}
+			return(x)
+		})
+		protAnnot <- do.call("rbind", protAnnot)
+
+		## Add annotation
+		protStats <- merge(protStat_temp, protAnnot,
+			by= "UniprotAC"
+		)
+		protStats <- protStats[,c("Names", "UniprotAC", "ExpressionDirection",
+			"DatasetID", "Contrast", "Length", "Symbol", "ENSGid", "Tissue")] 
+		colnames(protStats)[c(1,5,7:8)] <- c("Protein Name", "Comparison", 
+			"Gene symbol", "Gene code")
+
+		progress$set(message = "Integrating data",
+			detail = "All other actions will be currently suspended", 
+			value = 0.5
+		)
+
+		## Keep DEPs consistently deregulated in at least half 
+		## the selected datasets
+		protCommon <- split(protStats, f = protStats$UniprotAC)
+		protCommon <- lapply(protCommon, function(x){
+					
+			nDatasets <- length(unique(protStats$DatasetID))
+			orient0 <- x$ExpressionDirection
+			orient <- table(x$ExpressionDirection)
+			orient <- orient[which(orient == max(orient))]
+			orientDir <- names(orient)
+			orientFreq <- as.numeric(orient) 
+
+			# Remove proteins who are found in 2 datasets with inconsistent
+			# direction of deregulation
+			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
+				return(NA)
+			} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove proteins that are found DE towards the opposite 
+				return(NA)													# direction in the rest of the datasets
+			} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+				return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
+			} else { # else NA
+				return(NA)
+			}
+
+		})
+		protCommon[is.na(protCommon)] <- NULL
+		protCommon <- do.call("rbind", protCommon)
+
+		# Summarize DEP statistics
+		protStatList <- split(protCommon, f= protCommon$UniprotAC)
+		protStatSumTemp <- lapply(protStatList, function(x){
+
+			out <- data.frame(
+				Symbol = unique(x$"Gene symbol"),
+				Code = unique(x$"Gene code"),
+				DatasetID = paste(unique(x$DatasetID), collapse = ";"),
+				ExpressionDirection= unique(x$ExpressionDirection),
+				Contrast = unique(x$Comparison),
+				Tissue = paste(unique(x$Tissue), collapse = ";"),
+				stringsAsFactors= TRUE 
+			)
+			return(out)
+
+		})
+		protStatSumTemp <- do.call("rbind", protStatSumTemp)
+
+		# Maintain those DEPs matching to consensus DEGs with same direction
+		# of deregulation
+		# protStatSumTemp <- protStatSumTemp[
+		# 	grep(paste(statSum()$Code, collapse = "|"), protStatSumTemp$Code), 
+		# ]
+		out <- merge(protStatSumTemp, statSum(), by = "Code")
+		out$log2FcAve <- ifelse(out$log2FcAve < 0, "Down", "Up")
+		out <- out[out$ExpressionDirection == out$log2FcAve, ]
+
+		# Format output
+		out <- out[,c("Name", "Code", "DatasetID", "ExpressionDirection",
+			"Contrast", "Tissue")]
+		progress$inc(0.5)			
 
 		# Reactivate shiny inputs
 		toggle_inputs(input_list, TRUE)
@@ -2210,7 +2327,7 @@ shinyServer(function(input, output, session) {
 		protStats <- do.call("rbind", protStats)
 		rownames(protStats) <- NULL
 
-		## Keep DEGs consistently deregulated in at least half 
+		## Keep DEPs consistently deregulated in at least half 
 		## the selected datasets
 		protCommon <- split(protStats, f = protStats$UniprotAC)
 		protCommon <- lapply(protCommon, function(x){
@@ -2222,11 +2339,11 @@ shinyServer(function(input, output, session) {
 			orientDir <- names(orient)
 			orientFreq <- as.numeric(orient) 
 
-			# Remove genes who are found in 2 datasets with inconsistent
+			# Remove proteins who are found in 2 datasets with inconsistent
 			# direction of deregulation
 			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
 				return(NA)
-			} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove genes that are found DE towards the opposite 
+			} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove proteins that are found DE towards the opposite 
 				return(NA)													# direction in the rest of the datasets
 			} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
 				return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
