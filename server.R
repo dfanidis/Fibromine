@@ -503,9 +503,9 @@ shinyServer(function(input, output, session) {
 				updateTabsetPanel(session, "transDatasetsBox",
 					selected= "DEA statistics"
 				)
-				# and then to "Transcriptomics summary" tab
+				# and then to "Consensus DEGs" tab
 				updateTabsetPanel(session, "degStatBox",
-					selected= "Transcriptomics summary"
+					selected= "Consensus DEGs"
 				)
 			}
 	})
@@ -1130,131 +1130,145 @@ shinyServer(function(input, output, session) {
 			)
 		)
 
-		## Query and process protein annotation
-		protAnnot <- dbGetQuery(
-			conn= fibromine_db,
-			statement= '
-				SELECT 
-					Uniprot.UniprotAC, Length, Names,
-					GeneAnnotation.Symbol, GeneAnnotation.ENSGid
-				FROM 
-					Uniprot JOIN ENSGid2UniP JOIN GeneAnnotation
-					ON
-					Uniprot.UniprotAC = ENSGid2UniP.UniprotAC 
-						AND 
-					ENSGid2UniP.ENSGid = GeneAnnotation.ENSGid
-				WHERE
-					Uniprot.UniprotAC = :x
-			;',
-			params= list(
-				x= protStat_temp$UniprotAC
-			)
-		)
-		protAnnot <- split(protAnnot, f = protAnnot$UniprotAC)
+		# Protect from zero proteins output
+		if (nrow(protStat_temp) != 0) {
 
-		protAnnot <- lapply(protAnnot, function(x){
-
-			# Get rid of the same protein annotation called multiple times
-			# due to its existence in >1 datasets in protStat_temp
-			x <- unique(x)
-
-			# Keep and rectify the primary protein name given by Uniprot
-			temp <- strsplit(x$Names, split= "|||",
-				fixed= TRUE)
-			x$Names <- temp[[1]][1]
-			x$Names <- gsub("\\{.*\\}", "", x$Names)
-			
-			# In the case of a one:many Uniprot:Symbol relationship
-			if (nrow(x) > 1) {
-				x <- data.frame(
-					UniprotAC= unique(x$UniprotAC),
-					Length= unique(x$Length),
-					Names= unique(x$Names),
-					Symbol= paste(x$Symbol, collapse= "|||"),
-					ENSGid= paste(x$ENSGid, collapse= "|||")
+			## Query and process protein annotation
+			protAnnot <- dbGetQuery(
+				conn= fibromine_db,
+				statement= '
+					SELECT 
+						Uniprot.UniprotAC, Length, Names,
+						GeneAnnotation.Symbol, GeneAnnotation.ENSGid
+					FROM 
+						Uniprot JOIN ENSGid2UniP JOIN GeneAnnotation
+						ON
+						Uniprot.UniprotAC = ENSGid2UniP.UniprotAC 
+							AND 
+						ENSGid2UniP.ENSGid = GeneAnnotation.ENSGid
+					WHERE
+						Uniprot.UniprotAC = :x
+				;',
+				params= list(
+					x= protStat_temp$UniprotAC
 				)
-			}
-			return(x)
-		})
-		protAnnot <- do.call("rbind", protAnnot)
-
-		## Add annotation
-		protStats <- merge(protStat_temp, protAnnot,
-			by= "UniprotAC"
-		)
-		protStats <- protStats[,c("Names", "UniprotAC", "ExpressionDirection",
-			"DatasetID", "Contrast", "Length", "Symbol", "ENSGid", "Tissue")] 
-		colnames(protStats)[c(1,5,7:8)] <- c("Protein Name", "Comparison", 
-			"Gene symbol", "Gene code")
-
-		progress$set(message = "Integrating data",
-			detail = "All other actions will be currently suspended", 
-			value = 0.5
-		)
-
-		## Keep DEPs consistently deregulated in at least half 
-		## the selected datasets
-		protCommon <- split(protStats, f = protStats$UniprotAC)
-		protCommon <- lapply(protCommon, function(x){
-					
-			nDatasets <- length(unique(protStats$DatasetID))
-			orient0 <- x$ExpressionDirection
-			orient <- table(x$ExpressionDirection)
-			orient <- orient[which(orient == max(orient))]
-			orientDir <- names(orient)
-			orientFreq <- as.numeric(orient) 
-
-			# Remove proteins who are found in 2 datasets with inconsistent
-			# direction of deregulation
-			if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
-				return(NA)
-			} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove proteins that are found DE towards the opposite 
-				return(NA)													# direction in the rest of the datasets
-			} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
-				return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
-			} else { # else NA
-				return(NA)
-			}
-
-		})
-		protCommon[is.na(protCommon)] <- NULL
-		protCommon <- do.call("rbind", protCommon)
-
-		# Summarize DEP statistics
-		protStatList <- split(protCommon, f= protCommon$UniprotAC)
-		protStatSumTemp <- lapply(protStatList, function(x){
-
-			out <- data.frame(
-				Symbol = unique(x$"Gene symbol"),
-				Code = unique(x$"Gene code"),
-				DatasetID = paste(unique(x$DatasetID), collapse = ";"),
-				ExpressionDirection= unique(x$ExpressionDirection),
-				Contrast = unique(x$Comparison),
-				Tissue = paste(unique(x$Tissue), collapse = ";"),
-				stringsAsFactors= TRUE 
 			)
-			return(out)
+			protAnnot <- split(protAnnot, f = protAnnot$UniprotAC)
 
-		})
-		protStatSumTemp <- do.call("rbind", protStatSumTemp)
+			protAnnot <- lapply(protAnnot, function(x){
 
-		# Maintain those DEPs matching to consensus DEGs with same direction
-		# of deregulation
-		# protStatSumTemp <- protStatSumTemp[
-		# 	grep(paste(statSum()$Code, collapse = "|"), protStatSumTemp$Code), 
-		# ]
-		out <- merge(protStatSumTemp, statSum(), by = "Code")
-		out$log2FcAve <- ifelse(out$log2FcAve < 0, "Down", "Up")
-		out <- out[out$ExpressionDirection == out$log2FcAve, ]
+				# Get rid of the same protein annotation called multiple times
+				# due to its existence in >1 datasets in protStat_temp
+				x <- unique(x)
 
-		# Format output
-		out <- out[,c("Name", "Code", "DatasetID", "ExpressionDirection",
-			"Contrast", "Tissue")]
+				# Keep and rectify the primary protein name given by Uniprot
+				temp <- strsplit(x$Names, split= "|||",
+					fixed= TRUE)
+				x$Names <- temp[[1]][1]
+				x$Names <- gsub("\\{.*\\}", "", x$Names)
+				
+				# In the case of a one:many Uniprot:Symbol relationship
+				if (nrow(x) > 1) {
+					x <- data.frame(
+						UniprotAC= unique(x$UniprotAC),
+						Length= unique(x$Length),
+						Names= unique(x$Names),
+						Symbol= paste(x$Symbol, collapse= "|||"),
+						ENSGid= paste(x$ENSGid, collapse= "|||")
+					)
+				}
+				return(x)
+			})
+			protAnnot <- do.call("rbind", protAnnot)
+
+			## Add annotation
+			protStats <- merge(protStat_temp, protAnnot,
+				by= "UniprotAC"
+			)
+			protStats <- protStats[,c("Names", "UniprotAC", "ExpressionDirection",
+				"DatasetID", "Contrast", "Length", "Symbol", "ENSGid", "Tissue")] 
+			colnames(protStats)[c(1,5,7:8)] <- c("Protein Name", "Comparison", 
+				"Gene symbol", "Gene code")
+
+			progress$set(message = "Integrating data",
+				detail = "All other actions will be currently suspended", 
+				value = 0.5
+			)
+
+			## Keep DEPs consistently deregulated in at least half 
+			## the selected datasets
+			protCommon <- split(protStats, f = protStats$UniprotAC)
+			protCommon <- lapply(protCommon, function(x){
+						
+				nDatasets <- length(unique(protStats$DatasetID))
+				orient0 <- x$ExpressionDirection
+				orient <- table(x$ExpressionDirection)
+				orient <- orient[which(orient == max(orient))]
+				orientDir <- names(orient)
+				orientFreq <- as.numeric(orient) 
+
+				# Remove proteins who are found in 2 datasets with inconsistent
+				# direction of deregulation
+				if (length(orient) > 1 && orient["Down"] == orient["Up"]) {
+					return(NA)
+				} else if (orientFreq >= nDatasets*.5 & orientFreq != nrow(x)){ # remove proteins that are found DE towards the opposite 
+					return(NA)													# direction in the rest of the datasets
+				} else if (orientFreq >= nDatasets*.5 & orientFreq == nrow(x)){ # keep those consistently DE in at least half the datasets 
+					return(x[which(orient0 == orientDir),])						# and not DE towards the opposite direction in the rest 
+				} else { # else NA
+					return(NA)
+				}
+
+			})
+			protCommon[is.na(protCommon)] <- NULL
+			protCommon <- do.call("rbind", protCommon)
+
+			# Summarize DEP statistics
+			protStatList <- split(protCommon, f= protCommon$UniprotAC)
+			protStatSumTemp <- lapply(protStatList, function(x){
+
+				out <- data.frame(
+					Symbol = unique(x$"Gene symbol"),
+					Code = unique(x$"Gene code"),
+					DatasetID = paste(unique(x$DatasetID), collapse = ";"),
+					ExpressionDirection= unique(x$ExpressionDirection),
+					Contrast = unique(x$Comparison),
+					Tissue = paste(unique(x$Tissue), collapse = ";"),
+					stringsAsFactors= TRUE 
+				)
+				return(out)
+
+			})
+			protStatSumTemp <- do.call("rbind", protStatSumTemp)
+
+			# Maintain those DEPs matching to consensus DEGs with same direction
+			# of deregulation
+			# protStatSumTemp <- protStatSumTemp[
+			# 	grep(paste(statSum()$Code, collapse = "|"), protStatSumTemp$Code), 
+			# ]
+			out <- merge(protStatSumTemp, statSum(), by = "Code")
+			out$log2FcAve <- ifelse(out$log2FcAve < 0, "Down", "Up")
+			out <- out[out$ExpressionDirection == out$log2FcAve, ]
+
+			# Format output
+			out <- out[,c("Name", "Code", "DatasetID", "ExpressionDirection",
+				"Contrast", "Tissue")]
+			
+		} else {
+			# Format an empty table output
+			out <- data.frame(
+				Name = "",
+				Code = "",
+				DatasetID = "",
+				ExpressionDirection = "",
+				Contrast = "",
+				Tissue = ""
+			)
+		}
 		progress$inc(0.5)			
 
 		# Reactivate shiny inputs
 		toggle_inputs(input_list, TRUE)
-
 		return(out)
 	})	
 
@@ -1288,9 +1302,9 @@ shinyServer(function(input, output, session) {
 	        element= c(".step1_transStats", ".step2_transStats", ".step3_transStats"),
 	        intro= c(
 	            paste("The <b>results</b> of datasets exploration/integration are presented here.<br>",
-	            	"<b>Transcriptomics summary</b> tab displays those differentially expressed genes",
+	            	"<b>Consensus DEGs</b> tab displays those differentially expressed genes",
 	            	"found in <b>all</b> user selected datasets (same expression direction).<br>",
-	            	"<b>Proteomics summary</b> tab lists the differentially expressed proteins, if any,",
+	            	"<b>Consensus DEPs</b> tab lists the differentially expressed proteins, if any,",
 	            	"which are coded by the genes presented in the first tab.<br>",
 	            	"<b>Trancriptomics analytically</b> presents the differentially expressed genes",
 	            	"found in <b>at least half</b> the selected datasets (same expression direction",
@@ -2158,7 +2172,7 @@ shinyServer(function(input, output, session) {
 	    data.frame(
 	        element= ".step1_protStats",
 	        intro= paste("The <b>results</b> of datasets exploration/integration are presented here.<br>",
-	        	"<b>Proteomics summary</b> tab displays those differentially expressed proteins",
+	        	"<b>Consensus DEPs</b> tab displays those differentially expressed proteins",
 	        	"found in <b>all</b> user selected datasets (same expression direction).<br>",
 	        	"<b>Proteomics analytically</b> presents the differentially expressed proteins",
 	        	"found in <b>at least half</b> the selected datasets (same expression direction",
@@ -2192,12 +2206,12 @@ shinyServer(function(input, output, session) {
 	})
 
 	## Automatically redirect to the results tab
-	## and then specifically to "Proteomics summary" tab
+	## and then specifically to "Consensus DEPs" tab
 	observeEvent(input$protDtstsSearch, {
 		updateTabsetPanel(session, "protDatasetsBox",
 				selected= "DEA data")
 		updateTabsetPanel(session, "depStatBox",
-			selected= "Proteomics summary"
+			selected= "Consensus DEPs"
 		)
 	})
 

@@ -431,7 +431,7 @@ shinyUI(dashboardPage(
 								column(width=10,
 									shinydashboard::tabBox(
 										id= "degStatBox",
-										tabPanel("Transcriptomics summary",
+										tabPanel("Consensus DEGs",
 											DT::dataTableOutput("degStatsSum",
 												) %>% withSpinner(color="#008d4c"),
 
@@ -458,7 +458,7 @@ shinyUI(dashboardPage(
 												placement= "top"
 											)
 										),
-										tabPanel("Proteomics summary",
+										tabPanel("Consensus DEPs",
 											DT::dataTableOutput("depSum",
 												) %>% withSpinner(color="#008d4c"),
 
@@ -739,7 +739,7 @@ shinyUI(dashboardPage(
 							fluidRow(
 								shinydashboard::tabBox(
 									id= "depStatBox",
-									tabPanel("Proteomics summary",
+									tabPanel("Consensus DEPs",
 										DT::dataTableOutput("depStatsSum",
 											) %>% withSpinner(color="#008d4c"),
 
