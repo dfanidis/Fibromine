@@ -458,7 +458,7 @@ shinyUI(dashboardPage(
 												placement= "top"
 											)
 										),
-										tabPanel("Consensus DEPs",
+										tabPanel("Consensus DEPs coded",
 											DT::dataTableOutput("depSum",
 												) %>% withSpinner(color="#008d4c"),
 
