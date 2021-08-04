@@ -41,7 +41,7 @@ shinyUI(dashboardPage(
 			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_5"),
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_6"),
-			menuItem("How to", tabName= "HowTo", icon= shiny::icon("question")) %>% add_class("step_7"),
+			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_7"),
 			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_8"),
 
 			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_9"),
@@ -1428,10 +1428,52 @@ shinyUI(dashboardPage(
 			# ============================================================================
 			# How to tab
 			# ============================================================================
-			tabItem(tabName= "HowTo",
+			tabItem(tabName = "FAQ",
 				wellPanel(
 					fluidRow(
-						includeMarkdown("./www/howTo.md")
+						h2("FAQ"),
+						bsCollapse(id = "collapseFaq", multiple = FALSE, open = NULL,
+							bsCollapsePanel(
+								"How to explore one / integrate multiple single species transcriptomic datasets?", 
+								includeMarkdown("./www/faq/faqA.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"How to integrate transcriptomic datasets across species?", 
+								includeMarkdown("./www/faq/faqB.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"How to explore one / integrate multiple proteomic datasets?", 
+								includeMarkdown("./www/faq/faqC.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"How to search for the expression pattern of a specific (or multiple) gene?", 
+								includeMarkdown("./www/faq/faqD.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"How to search for the expression pattern of a specific protein?",
+								includeMarkdown("./www/faq/faqE.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"How to create a condition-specific protein-protein interaction network?", 
+								includeMarkdown("./www/faq/faqF.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"Are Fibromine data available for download?", 
+								includeMarkdown("./www/faq/faqG.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"Where I can find more technical details about Fibromine?", 
+								includeMarkdown("./www/faq/faqH.md"),
+								style = "danger"
+							)
+						)
 					)
 				)
 			),
