@@ -46,7 +46,7 @@ shinyServer(function(input, output, session) {
                 	"feature enables the acquisition of normalized gene expression data per dataset.",
                 	"Proteomics data per dataset are also available for download."
                 ),
-				paste("<b>How to</b> tab holds a visual guide for almost all Fibromine's features and analysis",
+				paste("<b>FAQ</b> tab holds a visual guide for almost all Fibromine's features and analysis",
                 	"results. Check it out!"
                 ),
                 paste("Detailed info about Fibromine explorers and their back-end processing can",
@@ -1304,7 +1304,7 @@ shinyServer(function(input, output, session) {
 	            paste("The <b>results</b> of datasets exploration/integration are presented here.<br>",
 	            	"<b>Consensus DEGs</b> tab displays those differentially expressed genes",
 	            	"found in <b>all</b> user selected datasets (same expression direction).<br>",
-	            	"<b>Consensus DEPs</b> tab lists the differentially expressed proteins, if any,",
+	            	"<b>Consensus DEPs coded</b> tab lists the differentially expressed proteins, if any,",
 	            	"which are coded by the genes presented in the first tab.<br>",
 	            	"<b>Trancriptomics analytically</b> presents the differentially expressed genes",
 	            	"found in <b>at least half</b> the selected datasets (same expression direction",
@@ -3860,14 +3860,14 @@ shinyServer(function(input, output, session) {
 	            	"in any of the Fibromine's currently included proteomic datasets will be here displayed."
 	            ),
 	            paste("The <b>main results</b> of each search can be found here. <br>",
-	            	"<b>Concerning protein</b> tab lists more detailed information regarding the protein of interest. <br>",
-	            	"<b>Differential expression</b> tab will host analytical information about the differential expression",
+	            	"<b>Search results</b> tab lists more detailed information regarding the protein of interest, along with",
+	            	"analytical information about its differential expression pattern, if any.<br>",
 	            	"pattern of the protein, if any. <br>",
 	            	"<b>PPI network</b> tab consists the 'crown jewel' of this explorer as enables the user to plot",
 	            	"<b>condition-specific protein-protein interaction networks</b> revolving around the queried protein.",
 	            	"Detailed instructions about its operation can be found inside the respective tab.<br>",
-	            	"Through the <b>last tab</b>, the user can inspect the datasets used to annotate the protein-protein",
-	            	"interaction network plotted."
+	            	"The user can inspect the data used to annotate the protein-protein",
+	            	"interaction network plotted via the <b>Data used for annotation</b> subtab of <b>PPI network</b> tab."
 	            )
 	        ),
 	        position= c(rep(c("right", "bottom"), each= 2), "top")
