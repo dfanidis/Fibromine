@@ -1619,6 +1619,7 @@ shinyServer(function(input, output, session) {
 			}
 
 			## Choose enricr site and dbs
+			library(enrichR)
 			setEnrichrSite("Enrichr")
 			ifelse(
 				any(grep("^ENSG", data$Code)),
@@ -1659,14 +1660,14 @@ shinyServer(function(input, output, session) {
 							detail = "All other actions will be currently suspended",
 							value = 0.20
 						)
-						enrUp <- enrichr(genes = up, databases = dbs)
+						enrUp <- enrichR::enrichr(genes = up, databases = dbs)
 						progress$inc(0.2)			
 
 						progress$set(message = "Analysis step 2/2",
 							detail = "All other actions will be currently suspended",
 							value = 0.55
 						)
-						enrDw <- enrichr(genes = dw, databases = dbs)
+						enrDw <- enrichR::enrichr(genes = dw, databases = dbs)
 						progress$set(message = "Formating results",
 							detail = "All other actions will be currently suspended",
 							value = 0.75

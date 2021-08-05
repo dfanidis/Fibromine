@@ -6,6 +6,6 @@ Navigate to the **Protein explorer**, type the name of the gene coding your prot
 
 *Note: the results presented in the following example screenshots can be recreated by pressing the Example button below the Search button of the explorer.*
 
-<a href= "faqScreenshots/proteinExpl1.png" target="_blank" rel='noopener noreferrer'> 
+<a href= "faq/faqScreenshots/proteinExpl1.png" target="_blank" rel='noopener noreferrer'> 
 	<img src= "./faqScreenshots/proteinExpl1.png" alt="image" style="width:900px;height:350px" class="center"/>
 </a>

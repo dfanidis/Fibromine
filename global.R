@@ -17,8 +17,7 @@ pckgList <- c(
   "openxlsx", 
   "rjson",
   "rintrojs",
-  "httr",
-  "enrichR"
+  "httr"
 )
 pckgMissing <- pckgList[!(pckgList %in% installed.packages()[,"Package"])]
 if(length(pckgMissing)) install.packages(pckgMissing)

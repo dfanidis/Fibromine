@@ -1,6 +1,6 @@
 1. Go to **Dataset explorer --> Transcriptomic datasets --> Datasets tab** and **choose** (via clicking) the dataset/comparison of interest from the displayed table as shown below. To begin integration **press the Search button (1)** and you will be redirected to the **results tab (3)**. To **reset** analysis input it is recommended to **reset** parameters via the **homonym button (2)**. *Note: Every column of the table can be dynamically filtered.*
 
-	<a href= "faqScreenshots/datasetExpl6.png" target="_blank" rel='noopener noreferrer'> 
+	<a href= "faq/faqScreenshots/datasetExpl6.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./faqScreenshots/datasetExpl6.png" alt="image" style="width:800px;height:400px" class="center">
 	</a>
 
@@ -10,14 +10,14 @@
 
 	The user can also perform **pathway analysis (8)** using the concensus differentially expressed genes presented in (2). The gene groups used as background for the analysis can be filtered from within the results table **(9)**.
 
-	<a href= "faqScreenshots/datasetExpl7.png" target="_blank" rel='noopener noreferrer'> 
+	<a href= "faq/faqScreenshots/datasetExpl7.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./faqScreenshots/datasetExpl7.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
 
-	<a href= "faqScreenshots/datasetExpl8.png" target="_blank" rel='noopener noreferrer'> 
+	<a href= "faq/faqScreenshots/datasetExpl8.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./faqScreenshots/datasetExpl8.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
 
-	<a href= "faqScreenshots/datasetExpl9.png" target="_blank" rel='noopener noreferrer'> 
+	<a href= "faq/faqScreenshots/datasetExpl9.png" target="_blank" rel='noopener noreferrer'> 
 		<img src= "./faqScreenshots/datasetExpl9.png" alt="image" style="width:900px;height:650px" class="center"/>
 	</a>
