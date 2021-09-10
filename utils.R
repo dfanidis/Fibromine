@@ -11,6 +11,34 @@ add_class <- function(x, class) {
 }
 
 # ============================================================================
+# Create custom boxes 
+# (for the PPI annotation legend)
+# Adapted from #efhopkins answer:
+# https://community.rstudio.com/t/shinydashboard-custom-box-colors-to-match-brand/14147/4
+# ============================================================================
+
+# color: controls the text color of the box
+# background: controls the color of the box
+# icon: seems not operational...
+
+customValueBox <- function (value, subtitle, icon = NULL, color, background, width = 4, href = NULL) 
+{
+  #validateColor(color)
+  #if (!is.null(icon)) 
+  #tagAssert(icon, type = "i")
+
+  style <- paste0("color: ", color, "; background-color: ", background, "; font-weight: bold;")
+
+  boxContent <- div(class = "small-box", style = style, 
+                    div(class = "inner", h3(value), p(subtitle)), if (!is.null(icon)) 
+                      div(class = "icon-large", icon))
+  if (!is.null(href)) 
+    boxContent <- a(href = href, boxContent)
+  div(class = if (!is.null(width)) 
+    paste0("col-sm-", width), boxContent)
+}
+
+# ============================================================================
 # Create heatmap
 # ============================================================================
 

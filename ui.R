@@ -1196,6 +1196,41 @@ shinyUI(dashboardPage(
 													helpText("Define parameters to annotate the network using
 														DEA data. Datasets used to perform the annotation will
 														be presented in 'Data used' tab.")
+												),
+												wellPanel(
+													h5("PPI annotation legend") %>% add_class("legendTitle"),
+													fluidRow(
+														customValueBox(value = NULL, subtitle = NULL, 
+															icon = NULL, color = "#ffffff", background = "#FF3232", 
+															width = 3, href = NULL
+														),
+														"Up-regulated",
+														width = 12
+													),
+													fluidRow(
+														customValueBox(value = NULL, subtitle = NULL, 
+															icon = NULL, color = "#ffffff", background = "#00FFFF", 
+															width = 3, href = NULL
+														),
+														"Down-regulated",
+														width = 12
+													),
+													fluidRow(
+														customValueBox(value = NULL, subtitle = NULL, 
+															icon = NULL, color = "#ffffff", background = "#BABABA",
+															width = 3, href = NULL
+														),
+														"Non DE",
+														width = 12																									
+													),
+													fluidRow(
+														customValueBox(value = NULL, subtitle = NULL, 
+															icon = NULL, color = "#ffffff", background = "#97C2FC",
+															width = 3, href = NULL
+														),
+														"Unknown",
+														width = 12
+													)
 												)
 											)
 										)
