@@ -34,18 +34,19 @@ shinyUI(dashboardPage(
 			) %>% add_class("step_1"),
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
+			menuItem("Gene coexpression", tabName= "GCN", icon= shiny::icon("project-diagram")) %>% add_class("step_4"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star"),
 				menuItem("Benchmarking results", tabName = "BenchRes"),
 				menuItem("Benchmarking backstage", tabName = "BenchBack")
-			) %>% add_class("step_4"),
-			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_5"),
+			) %>% add_class("step_5"),
+			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_6"),
 
-			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_6"),
-			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_7"),
-			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_8"),
+			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_7"),
+			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_8"),
+			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_9"),
 
-			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_9"),
-			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_10")
+			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_10"),
+			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_11")
 		)
 	),
 	dashboardBody(
@@ -1248,6 +1249,190 @@ shinyUI(dashboardPage(
 						),
 						width=12
 					) %>% add_class("step1_proteinExplorer")
+				)
+			),
+
+			# ============================================================================
+						# Gene coexpression tab
+			# ============================================================================
+			tabItem(tabName= "GCN",
+				fluidRow(
+					column(width=12,
+						shinydashboard::tabBox(
+							tabPanel(title = "Human lung GCN",
+								fluidRow(
+									column(width = 2,
+										wellPanel(
+											selectizeInput(
+												inputId = "geneCoListHsa",
+												label = "Select a gene of interest",
+												choices = NULL,
+												selected = NULL,
+												multiple = FALSE
+											),
+											actionButton(
+												inputId = "plotGCNHsa", 
+												label = "Plot", 
+												icon = shiny::icon("paint-brush"), 
+												style = "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											selectInput(
+												inputId = "mmInHsa",
+												label = "Filter by module membership",
+												choices = c(
+													"0th" = 1,
+													"10th" = 2,
+													"20th" = 3,
+													"30th" = 4,
+													"40th" = 5,
+													"50th" = 6,
+													"60th" = 7,
+													"70th" = 8,
+													"80th" = 9,
+													"90th" = 10,
+													"100th" = 11
+												),
+												selected = 7,
+												multiple = FALSE
+											),
+											bsTooltip(
+												id= "mmInHsa",
+												title= paste0("Set the quantile for filtering network components. ",
+													"Default value is set to 60th, meaning that all module genes with membership ",
+													"smaller than that of the 60th percentile will be dropped"
+												),
+												placement="right"
+											),
+											selectInput(
+												inputId= "gsInHsa",
+												label= "Filter by gene significance",
+												choices = c(
+													"0th" = 1,
+													"10th" = 2,
+													"20th" = 3,
+													"30th" = 4,
+													"40th" = 5,
+													"50th" = 6,
+													"60th" = 7,
+													"70th" = 8,
+													"80th" = 9,
+													"90th" = 10,
+													"100th" = 11
+												),
+												selected = 7,
+												multiple = FALSE
+											),
+											bsTooltip(
+												id= "gsInHsa",
+												title= paste0("Set the quantile for filtering network components. ",
+													"Default value is set to 60th, meaning that all module genes with significance ",
+													"smaller than that of the 60th percentile will be dropped"
+												),
+												placement="right"
+											),
+											helpText("Select a gene from the drop-down menu and press
+												the 'Plot' button to visualize a gene coexpression network."
+											),
+											"Note: plotting of the first network may take some time. Please, be patient."
+										)
+									),
+									column(width = 10,							
+										visNetworkOutput(outputId= "gcnNetworkHsa",
+											height= "650px")
+									),
+									width = 12
+								)							
+							),
+							tabPanel(title = "Mouse lung GCN",
+								fluidRow(
+									column(width = 2,
+										wellPanel(
+											selectizeInput(
+												inputId = "geneCoListMmu",
+												label = "Select a gene of interest",
+												choices = NULL,
+												selected = NULL,
+												multiple = FALSE,
+												size = NULL
+											),
+											actionButton(
+												inputId = "plotGCNMmu", 
+												label = "Plot", 
+												icon = shiny::icon("paint-brush"), 
+												style = "background-color: #d42132; color: white;
+													border-color: #d42132;"
+											),
+											selectInput(
+												inputId = "mmInMmu",
+												label = "Filter by module membership",
+												choices = c(
+													"0th" = 1,
+													"10th" = 2,
+													"20th" = 3,
+													"30th" = 4,
+													"40th" = 5,
+													"50th" = 6,
+													"60th" = 7,
+													"70th" = 8,
+													"80th" = 9,
+													"90th" = 10,
+													"100th" = 11
+												),
+												selected = 7,
+												multiple = FALSE
+											),
+											bsTooltip(
+												id= "mmInMmu",
+												title= paste0("Set the quantile for filtering network components. ",
+													"Default value is set to 60th, meaning that all module genes with membership ",
+													"smaller than that of the 60th percentile will be dropped"
+												),
+												placement="right"
+											),
+											selectInput(
+												inputId= "gsInMmu",
+												label= "Filter by gene significance",
+												choices = c(
+													"0th" = 1,
+													"10th" = 2,
+													"20th" = 3,
+													"30th" = 4,
+													"40th" = 5,
+													"50th" = 6,
+													"60th" = 7,
+													"70th" = 8,
+													"80th" = 9,
+													"90th" = 10,
+													"100th" = 11
+												),
+												selected = 7,
+												multiple = FALSE
+											),
+											bsTooltip(
+												id= "gsInMmu",
+												title= paste0("Set the quantile for filtering network components. ",
+													"Default value is set to 60th, meaning that all module genes with significance ",
+													"smaller than that of the 60th percentile will be dropped"
+												),
+												placement="right"
+											),									
+											helpText("Select a gene from the drop-down menu and press
+												the 'Plot' button to visualize a gene coexpression network."
+											),
+											"Note: plotting of the first network may take some time. Please, be patient."
+										)
+									),
+									column(width = 10,							
+										visNetworkOutput(outputId= "gcnNetworkMmu",
+											height= "650px")
+									),
+									width = 12
+								)							
+							),
+							width = 12
+						)
+					)
 				)
 			),
 

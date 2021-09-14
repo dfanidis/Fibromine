@@ -19,7 +19,7 @@ shinyServer(function(input, output, session) {
 	## Set the tour
 	steps <- reactive(
         data.frame(
-            element= paste0(".step_", 1:10),
+            element= paste0(".step_", 1:11),
             intro= c(
                  paste("<b>Dataset explorer</b> provides a quick way to explore",
                 	"transcriptomic and proteomic datasets in an independent",
@@ -34,6 +34,10 @@ shinyServer(function(input, output, session) {
                 	"expressed proteins in the lung of IPF patients compared to the respective",
                 	"healthy controls.", "In addition, condition-specific protein-protein networks",
                 	"can be plotted."
+                ),
+                paste("Through <b>Gene coexpression</b> the user can visually locate genes of interest",
+                	"in lung-specific human and mouse gene coexpression networks. Each of the available genes is",
+                	"a member of important modules as established via <b>WGCNA</b>"
                 ),
                 paste("<b>Datasets benchmarking</b> tab summarizes  the results of a <b>custom</b> datasets",
                 	"benchmarking process implemented into Fibromine: the <b>more stars</b> a dataset",
@@ -58,7 +62,7 @@ shinyServer(function(input, output, session) {
                 paste("<b>Feedback makes us better!</b> Please, report any issue or new dataset",
                 	"not already included into Fibromine on our GitHub repository.")
             ),
-            position= rep("auto", 10)
+            position= rep("auto", 11)
         )
     )
 
@@ -4764,6 +4768,268 @@ shinyServer(function(input, output, session) {
 			step= 0.01 
 		)
 
+	})
+
+	# ============================================================================
+	# "Gene coexpression" tab Items
+	# ============================================================================
+
+	## TOM tables ======================================================================
+	toms <- reactiveValues(tomHsa = NULL, tomMmu = NULL)
+
+
+	## Human lung GCN ==================================================================
+
+	data_gcnHsa <- eventReactive(eventExpr = input$plotGCNHsa, valueExpr= c(input$geneCoListHsa, 
+		input$speciesGCNHsa, input$mmIn, input$gsIn))
+
+	updateSelectizeInput(session, 
+		inputId = "geneCoListHsa", 
+		choices = gcnHsaChoices, 
+		server = TRUE
+	)
+
+	gcnHsa <- eventReactive(input$plotGCNHsa, {
+
+		req(input$geneCoListHsa)
+
+		## Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(
+			message = "Fetching data", 
+			detail = paste("All other actions will be currently suspended", 
+				"Note: plotting of the FIRST network may take some time. Please, be patient."),
+			value=0
+		)
+		progress$inc(0.10)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		modIn <- as.character(dbGetQuery(conn = fibromine_db,
+			statement = "
+				SELECT 
+					Module
+				FROM 
+					GCNdrivers
+				WHERE
+					Comparison = 'IPF_vs_Ctrl' AND Name = :x
+			;",
+			params = list(x = input$geneCoListHsa)
+		)$"Module")
+		progress$inc(0.10)
+
+		# Get genes of the same WGCNA module
+		dTemp <- dbGetQuery(conn = fibromine_db,
+			statement = "
+				SELECT 
+					Name, MM, MMPvalue, GS, GSPvalue
+				FROM 
+					GCNdrivers
+				WHERE
+					Comparison = 'IPF_vs_Ctrl' AND Module = :x
+			;",
+			params = list(x = modIn)
+		)
+		progress$inc(0.10)
+
+		# Isolate genes based on the user selected quantile of MM and GS
+		mmSum <- quantile(abs(dTemp$MM), seq(0, 1, 0.1))
+		gsSum <- quantile(abs(dTemp$GS), seq(0, 1, 0.1))
+		rest <- dTemp[abs(dTemp$MM) >= mmSum[as.numeric(input$mmInHsa)] & abs(dTemp$GS) >= gsSum[as.numeric(input$gsInHsa)], "Name"]
+		progress$inc(0.10)
+
+		# Fetch and subset TOM table
+		if(input$plotGCNHsa == 1) {
+			toms$tomHsa <- read.delim("./www/gcn/tomSigHsa.txt")
+		} else {
+			return
+		}
+		# Note: it is important to have the queried gene at the last
+		# column (and thus also row) of the matrix in order to be plotted always
+		# in front of other potentially co-locating nodes
+		tomTemp <- data.matrix(toms$tomHsa[c(rest, input$geneCoListHsa), c(rest, input$geneCoListHsa)])
+		progress$inc(0.50)
+
+		# Create the graph base on TOM table
+		g <- graph_from_adjacency_matrix(tomTemp, mode = "undirected", 
+			weighted = TRUE, diag = TRUE)
+		g <- simplify(g, remove.multiple = TRUE, remove.loops = TRUE)
+		E(g)$weight <- abs(E(g)$weight)
+
+		# Remove edges with a TOM below the 3rd quartile
+		g <- delete_edges(g, E(g)[which(E(g)$weight < summary(E(g)$weight)[5])])
+
+		# Remove any vertices remaining that have no edges 
+		# (but not the queried gene even if it has no edges)
+		drop <- degree(g)==0
+		drop[input$geneCoListHsa] <- FALSE
+		g <- delete.vertices(g, drop) 
+
+		# Change colour of graph vertices
+		V(g)$color <- "#00ffff" 
+
+		# Change colour of vertex frames
+		V(g)$vertex.frame.color <- "white" 
+
+		# Change shape of graph vertices
+		V(g)$shape <- "circle"
+
+		# Change size of graph vertices
+		V(g)$size <- 1
+
+		# Color differently the search term
+		V(g)[input$geneCoListHsa]$color <- "#ff3232"
+
+		# Convert the graph adjacency object into a 
+		# minimum spanning tree based on Prim's algorithm
+		mst <- mst(g, algorithm = "prim")
+		progress$inc(0.10)
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
+		# Plot using visNetwork
+		return(visIgraph(mst, layout = "layout_nicely", randomSeed = 21))
+
+	})
+
+	output$gcnNetworkHsa <- renderVisNetwork({
+		validate(
+			need(!is.null(input$geneCoListHsa),
+				"Select a gene"
+			)
+		)
+		gcnHsa()
+	})
+
+	## Mouse lung GCN ==================================================================
+
+	data_gcnMmu <- eventReactive(eventExpr = input$plotGCNMmu, valueExpr= c(input$geneCoListMmu, 
+		input$speciesGCNMmu))
+
+	updateSelectizeInput(session, 
+		inputId = "geneCoListMmu", 
+		choices = gcnMmuChoices, 
+		server = TRUE
+	)
+
+	gcnMmu <- eventReactive(input$plotGCNMmu, {
+
+		req(input$geneCoListMmu)
+
+		## Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(
+			message = "Fetching data", 
+			detail = paste("All other actions will be currently suspended\n", 
+				"Note: plotting of the FIRST network may take some time. Please, be patient."),
+			value=0
+		)
+		progress$inc(0.10)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		modIn <- as.character(dbGetQuery(conn = fibromine_db,
+			statement = "
+				SELECT 
+					Module
+				FROM 
+					GCNdrivers
+				WHERE
+					Comparison = 'BleomycinD14_vs_Ctrl' AND Name = :x
+			;",
+			params = list(x = input$geneCoListMmu)
+		)$"Module")
+		progress$inc(0.10)
+
+		# Get genes of the same WGCNA module
+		dTemp <- dbGetQuery(conn = fibromine_db,
+			statement = "
+				SELECT 
+					Name, MM, MMPvalue, GS, GSPvalue
+				FROM 
+					GCNdrivers
+				WHERE
+					Comparison = 'BleomycinD14_vs_Ctrl' AND Module = :x
+			;",
+			params = list(x = modIn)
+		)
+		progress$inc(0.10)
+
+		# Isolate genes based on the 90th quantile of MM and GS
+		mmSum <- quantile(abs(dTemp$MM), seq(0, 1, 0.1))
+		gsSum <- quantile(abs(dTemp$GS), seq(0, 1, 0.1))
+		rest <- dTemp[abs(dTemp$MM) >= mmSum[as.numeric(input$gsInMmu)] & abs(dTemp$GS) >= gsSum[as.numeric(input$gsInMmu)], "Name"]
+		progress$inc(0.10)
+
+		# Fetch and subset TOM table
+		if(input$plotGCNMmu == 1) {
+			toms$tomMmu <- read.delim("./www/gcn/tomSigMmu.txt")
+		} else {
+			return
+		}
+		# Note: it is important to have the queried gene at the last
+		# column (and thus also row) of the matrix in order to be plotted always
+		# in front of other potentially co-locating nodes
+		tomTemp <- data.matrix(toms$tomMmu[c(rest, input$geneCoListMmu), c(rest, input$geneCoListMmu)])
+		progress$inc(0.50)
+
+		# Create the graph base on TOM table
+		g <- graph_from_adjacency_matrix(tomTemp, mode = "undirected", 
+			weighted = TRUE, diag = TRUE)
+		g <- simplify(g, remove.multiple = TRUE, remove.loops = TRUE)
+		E(g)$weight <- abs(E(g)$weight)
+
+		# Remove edges with a TOM below the 3rd quartile
+		g <- delete_edges(g, E(g)[which(E(g)$weight < summary(E(g)$weight)[5])])
+
+		# Remove any vertices remaining that have no edges (but not the queried gene even if it has
+		# no edges)
+		drop <- degree(g)==0
+		drop[input$geneCoListMmu] <- FALSE
+		g <- delete.vertices(g, drop) 
+
+		# Change colour of graph vertices
+		V(g)$color <- "#00ffff" 
+
+		# Change colour of vertex frames
+		V(g)$vertex.frame.color <- "white" 
+
+		# Change shape of graph vertices
+		V(g)$shape <- "circle"
+
+		# Change size of graph vertices
+		V(g)$size <- 1
+
+		# Color differently the search term
+		V(g)[input$geneCoListMmu]$color <- "#ff3232"
+
+		# Convert the graph adjacency object into a 
+		# minimum spanning tree based on Prim's algorithm
+		mst <- mst(g, algorithm = "prim")
+		progress$inc(0.10)
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
+		# Plot using visNetwork
+		return(visIgraph(mst, layout = "layout_nicely", randomSeed = 21))
+
+	})
+
+	output$gcnNetworkMmu <- renderVisNetwork({
+		validate(
+			need(!is.null(input$geneCoListMmu),
+				"Select a gene"
+			)
+		)
+		gcnMmu()
 	})
 
 	# ============================================================================

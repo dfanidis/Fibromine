@@ -56,6 +56,34 @@ techChoices <- c("RNA expression profiling",
 	"Non-coding RNA expression profiling")
 
 # ============================================================================
+# gcnHsaChoices
+# ============================================================================
+gcnHsaChoices <- as.character(dbGetQuery(conn = fibromine_db,
+  statement = '
+    SELECT 
+      Name
+    FROM 
+      GCNdrivers
+    WHERE 
+      Comparison = "IPF_vs_Ctrl"
+  ;'
+)$Name)
+
+# ============================================================================
+# gcnMmuChoices
+# ============================================================================
+gcnMmuChoices <- as.character(dbGetQuery(conn = fibromine_db,
+  statement = '
+    SELECT 
+      Name
+    FROM 
+      GCNdrivers
+    WHERE 
+      Comparison = "BleomycinD14_vs_Ctrl"
+  ;'
+)$Name)
+
+# ============================================================================
 # Datasets lists to use in download data tab
 # ============================================================================
 transDatasets <- dbGetQuery(
