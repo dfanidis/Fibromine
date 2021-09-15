@@ -43,8 +43,9 @@ shinyServer(function(input, output, session) {
                 	"benchmarking process implemented into Fibromine: the <b>more stars</b> a dataset",
                 	'has been decorated with, the <b>more "trustworthy" it is.</b><br/>'
                 ),
-                paste("<b>Single cell data</b> tab summarizes all single cell datasets published",
-                	"thus far in the context of IPF pathology."
+				paste("<b>Single cell data</b> tab <b>summarizes</b> all single cell datasets published",
+                	"thus far relative to IPF pathology and enables the user to <b>navigate</b> through",
+                	"the <b>DEGs</b> of one of the <b>biggest</b> of them."
                 ),
                 paste("For anyone that wants to perform his/her own analysis, <b>Download Data</b>",
                 	"feature enables the acquisition of normalized gene expression data per dataset.",
@@ -4777,11 +4778,7 @@ shinyServer(function(input, output, session) {
 	## TOM tables ======================================================================
 	toms <- reactiveValues(tomHsa = NULL, tomMmu = NULL)
 
-
 	## Human lung GCN ==================================================================
-
-	data_gcnHsa <- eventReactive(eventExpr = input$plotGCNHsa, valueExpr= c(input$geneCoListHsa, 
-		input$speciesGCNHsa, input$mmIn, input$gsIn))
 
 	updateSelectizeInput(session, 
 		inputId = "geneCoListHsa", 
@@ -4906,9 +4903,6 @@ shinyServer(function(input, output, session) {
 	})
 
 	## Mouse lung GCN ==================================================================
-
-	data_gcnMmu <- eventReactive(eventExpr = input$plotGCNMmu, valueExpr= c(input$geneCoListMmu, 
-		input$speciesGCNMmu))
 
 	updateSelectizeInput(session, 
 		inputId = "geneCoListMmu", 
@@ -5707,7 +5701,7 @@ shinyServer(function(input, output, session) {
 	})
 
 	# ============================================================================
-	# Single cell data tab
+	# Single cell --> scStudies data tab
 	# ============================================================================
 	scDatasets <- reactiveValues(mainScTable= NULL)
 
@@ -5764,6 +5758,140 @@ shinyServer(function(input, output, session) {
 	  	)
 	})
 	
+	# ============================================================================
+	# Single cell --> scData data tab
+	# ============================================================================
+	updateSelectizeInput(session, 
+		inputId = "scGeneIn", 
+		choices = scGeneChoices, 
+		server = TRUE
+	)
+
+	scDEAstats <- eventReactive(input$scGeneSearch, {
+
+		req(input$scGeneIn)
+
+		## Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(
+			message = "Fetching data", 
+			detail = paste("All other actions will be currently suspended"), 
+			value=0
+		)
+		progress$inc(0.10)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		# Fetch data
+		deaTemp <- dbGetQuery(conn = fibromine_db,
+			statement = "
+				SELECT 
+					Comparison, DEAstats
+				FROM 
+					scDEA 
+				WHERE
+					Gene = :x
+			;",
+			params = list(x = input$scGeneIn)
+		)
+
+		# Reconstruct statistics table
+		dea <- as.list(deaTemp$DEAstats)
+		names(dea) <- deaTemp$Comparison
+		dea <- lapply(dea, function(x){
+			out <- fromJSON(x)
+			out <- data.frame(
+				Cluster = out$cluster,
+				pVal = out$p_val,
+				avgLogFC = out$avg_logFC,
+				pct1 = out$pct.1,
+				pct2 = out$pct.2,
+				pValAdj = out$p_val_adj
+			)
+			return(out)
+		})
+		dea <- do.call("rbind", dea)
+		dea <- cbind(
+			Gene = input$scGeneIn,
+			Comparison = gsub("\\..*", "", rownames(dea)),
+			dea
+		)
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
+		return(dea)
+
+	})
+
+	output$gcnNetworkHsa <- renderVisNetwork({
+		validate(
+			need(!is.null(input$geneCoListHsa),
+				"Select a gene"
+			)
+		)
+		gcnHsa()
+	})
+
+
+	output$scDEAstats <- DT::renderDataTable({
+
+		# req(scDEAstats()) 
+		out <- scDEAstats()
+
+		# Color up- and down- regulated genes red and green
+		brks <- quantile(out$avgLogFC, probs= seq(0, 1, 0.1), na.rm= TRUE)
+		clrsPal <- colorRampPalette(c("green","white","red"))
+		clrs <- clrsPal(length(brks)+1)
+
+		# Color significant (adj) p-values red
+		out$pColor <- ifelse(out$pVal < 0.05, 1, 0)
+		out$pAdjColor <- ifelse(out$pValAdj < 0.05, 1, 0)
+
+		# Convert to factors for easier client-side filtering of the table
+		out$Gene <- as.factor(out$Gene)
+		out$Comparison <- as.factor(out$Comparison)
+		out$Cluster <- as.factor(out$Cluster)
+
+		dtable <- datatable(data= out, 
+			selection= "none", 
+			rownames= FALSE,
+			filter= "top",
+			class= "compact", 
+			options= list(
+				rowsGroup = list(0), 
+				order = list(list(0, "asc")),
+				sDom  = '<"top">lrt<"bottom">ip',
+				columnDefs= list(
+					list(
+						targets = c(8,9),
+						visible = FALSE
+					),
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				)
+			)#,
+	  		#extensions= "Responsive"
+		) %>% formatStyle(1:ncol(out), 
+			cursor = 'pointer'
+		) %>% formatStyle("avgLogFC",
+				backgroundColor= styleInterval(brks, clrs)
+		) %>% formatRound(c("avgLogFC", "pVal", "pValAdj"),
+			digits= 5
+		) %>% formatStyle("pVal", "pColor",
+			backgroundColor= styleEqual(1, "#ff8e8e")
+		) %>% formatStyle("pValAdj", "pAdjColor",
+			backgroundColor= styleEqual(1, "#ff8e8e")
+		)
+		dtable
+
+	})
+
 	# ============================================================================
 	# Download data tab
 	# ============================================================================

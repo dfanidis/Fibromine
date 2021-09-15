@@ -84,6 +84,18 @@ gcnMmuChoices <- as.character(dbGetQuery(conn = fibromine_db,
 )$Name)
 
 # ============================================================================
+# scGeneChoices
+# ============================================================================
+scGeneChoices <- unique(as.character(dbGetQuery(conn = fibromine_db,
+  statement = '
+    SELECT 
+      Gene
+    FROM 
+      scDEA
+  ;'
+)$Gene))
+
+# ============================================================================
 # Datasets lists to use in download data tab
 # ============================================================================
 transDatasets <- dbGetQuery(

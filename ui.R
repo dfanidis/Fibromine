@@ -39,7 +39,10 @@ shinyUI(dashboardPage(
 				menuItem("Benchmarking results", tabName = "BenchRes"),
 				menuItem("Benchmarking backstage", tabName = "BenchBack")
 			) %>% add_class("step_5"),
-			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille")) %>% add_class("step_6"),
+			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille"),
+				menuItem("Published studies", tabName = "scStudies"),
+				menuItem("Search data", tabName = "scData")
+			) %>% add_class("step_6"),
 
 			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_7"),
 			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_8"),
@@ -1513,7 +1516,9 @@ shinyUI(dashboardPage(
 			# ============================================================================
 			# Single cell data tab
 			# ============================================================================
-			tabItem(tabName= "SingleCell",
+
+			# scStudies sub-tab
+			tabItem(tabName= "scStudies",
 				wellPanel(
 					fluidRow(
 						tipify(
@@ -1546,6 +1551,58 @@ shinyUI(dashboardPage(
 						column(width= 12,
 							DT::dataTableOutput("scDatasetsTable")
 						)
+					)
+				)
+			),
+
+			# scData sub-tab
+			tabItem(tabName = "scData",
+				fluidRow(
+					column(width=12,
+						box(title = NULL, footer = NULL,
+							fluidRow(width = 12,
+								tipify(
+									h3("DEGs at single cell level", 
+										shiny::icon("question-circle")
+									),
+									title= paste0("Expression statistics ",
+										"at the single cell level ",
+										"for the top variable genes of Mayr et al. 2020."
+									)
+								)
+							),
+							fluidRow(
+								column(width = 2,
+									wellPanel(
+										selectizeInput(
+											inputId = "scGeneIn",
+											label = "Select a gene of interest",
+											choices = NULL,
+											selected = NULL,
+											multiple = FALSE
+										),
+										actionButton(
+											inputId = "scGeneSearch", 
+											label = "Search", 
+											icon = shiny::icon("search"), 
+											style = "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										helpText("Select a gene from the drop-down menu and press
+											the 'Search' button to obtain DEA for that gene in several cell
+											populations (various fibrotic diseases vs donor control samples)."
+										)
+									)
+								),
+								column(width = 10,							
+									DT::dataTableOutput("scDEAstats",
+										) %>% withSpinner(color="#008d4c"),
+								),
+								width = 12
+							),							
+							solidHeader = TRUE, width = 12,
+							collapsible = FALSE
+					    )
 					)
 				)
 			),
