@@ -19,7 +19,7 @@ shinyServer(function(input, output, session) {
 	## Set the tour
 	steps <- reactive(
         data.frame(
-            element= paste0(".step_", 1:11),
+            element= paste0(".step_", 1:12),
             intro= c(
                  paste("<b>Dataset explorer</b> provides a quick way to explore",
                 	"transcriptomic and proteomic datasets in an independent",
@@ -29,6 +29,11 @@ shinyServer(function(input, output, session) {
                 	"pattern of specific gene(-s) of interest via single or batch search.",
                 	"Wealthy gene metadata, as well as the report of any differentially",
                 	"expressed proteins coded by the searched genes are also available."
+                ),
+                paste("Beginning from a list of all <b>consistently</b> differentially expressed",
+                	"<b>miRNAs</b> found in the lung IPF_vs_Ctrl non-coding array datasets, <b>miRNA explorer</b>",
+                	"outputs their potential <b>mRNA targets</b> significantly deregulated towards the opposite",
+                	"direction of expression."
                 ),
                 paste("Via <b>Protein explorer</b> the user can discover the differenitally",
                 	"expressed proteins in the lung of IPF patients compared to the respective",
@@ -63,7 +68,7 @@ shinyServer(function(input, output, session) {
                 paste("<b>Feedback makes us better!</b> Please, report any issue or new dataset",
                 	"not already included into Fibromine on our GitHub repository.")
             ),
-            position= rep("auto", 11)
+            position= rep("auto", 12)
         )
     )
 
@@ -3816,6 +3821,151 @@ shinyServer(function(input, output, session) {
 			write.xlsx(miRNAinteractorsTable(),file)
 		}
 	)
+
+	# ============================================================================
+	# "miRNA explorer" tab Items
+	# ============================================================================
+	updateSelectizeInput(session, 
+		inputId = "DEmiRNAIn", 
+		choices = DEmiRNAChoices, 
+		server = TRUE
+	)
+
+	DEmiRNAVals <- reactiveValues(nonCod = NULL, cod = NULL)
+
+	observeEvent(input$DEmiRNASearch, {
+
+		req(input$DEmiRNAIn)
+
+		## Create a progress object
+		progress <- shiny::Progress$new()
+		on.exit(progress$close())
+		progress$set(
+			message = "Fetching data", 
+			detail = paste("All other actions will be currently suspended"),
+			value=0
+		)
+		progress$inc(0.10)
+
+		# Gather all shiny inputs and deactivate them
+		input_list <- reactiveValuesToList(input)
+		toggle_inputs(input_list, FALSE)
+
+		nonCodIn <- dbGetQuery(conn = fibromine_db,
+			statement = '
+				SELECT 
+					*
+				FROM 
+					nonCodingDEShort
+				WHERE 
+					prodID = :x
+			;',
+			params = list(x = input$DEmiRNAIn)
+		)
+
+		codIn <- dbGetQuery(conn = fibromine_db,
+			statement = '
+				SELECT 
+					codingDEShort.*
+				FROM 
+					nonCodingDEShort JOIN coding2nonCodingShort JOIN codingDEShort
+				ON 
+					nonCodingDEShort.prodID = coding2nonCodingShort.prodID AND
+					coding2nonCodingShort.ENSGid = codingDEShort.ENSGid
+				WHERE 
+					nonCodingDEShort.prodID = :x
+			;',
+			params = list(x = input$DEmiRNAIn)
+		)
+
+		# Pick those targets having opposite expression direction
+		# than the selected miRNA
+		codIn <- codIn[which(sign(codIn$log2FcAve) != sign(nonCodIn$log2FcAve)), ]
+
+		codAnnot <- dbGetQuery(conn = fibromine_db,
+			statement = '
+				SELECT 
+					ENSGid, Symbol
+				FROM 
+					GeneAnnotation
+				WHERE 
+					ENSGid = :x
+			;',
+			params = list(x = codIn$ENSGid)
+		)
+		codIn <- merge(codAnnot, codIn, by = "ENSGid")
+		codIn$ENSGid <- NULL
+
+		# Return tables
+		DEmiRNAVals$nonCod <- nonCodIn
+		DEmiRNAVals$cod <- codIn
+
+		# Reactivate shiny inputs
+		toggle_inputs(input_list, TRUE)
+
+	})
+
+	output$DEmiRNATable <- DT::renderDataTable({
+		validate(
+			need(!is.null(DEmiRNAVals$nonCod),
+				"Select a gene"
+			)
+		)
+
+		# Transform to factor for easier user search
+		out <- DEmiRNAVals$nonCod
+		out$prodID <- as.factor(out$prodID)
+
+		datatable(out, selection = "multiple", 
+			rownames= FALSE,
+			escape= FALSE, 
+			filter= "top",
+			class= "compact",
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
+				columnDefs= list(
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				)
+			)	
+	  	) %>% formatStyle(1:ncol(out), cursor = 'pointer'
+	  	) %>% formatRound("log2FcAve", digits= 5
+		)
+
+	})
+
+	output$DEtargetTable <- DT::renderDataTable({
+		validate(
+			need(!is.null(DEmiRNAVals$cod),
+				"Select a gene"
+			)
+		)
+
+		# Transform to factor for easier user search
+		out <- DEmiRNAVals$cod
+		out$Symbol <- as.factor(out$Symbol)
+
+		datatable(out, selection = "multiple", 
+			rownames= FALSE,
+			escape= FALSE, 
+			filter= "top",
+			class= "compact",
+			options= list(
+				sDom= '<"top">lrt<"bottom">ip', # to enable search bar use "flrt" instead (f for Filtering)
+				columnDefs= list(
+					list(
+						className= "dt-center", 
+						targets= "_all"
+					)
+				)
+			)
+	  	) %>% formatStyle(1:ncol(out), cursor = 'pointer'
+	  	) %>% formatRound("log2FcAve", digits= 5
+		)
+
+	})
 
 	# ============================================================================
 	# "Protein explorer" tab Items

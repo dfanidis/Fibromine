@@ -33,23 +33,24 @@ shinyUI(dashboardPage(
 				menuItem("Proteomic datasets", tabName = "ByProtDataset")
 			) %>% add_class("step_1"),
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
-			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_3"),
-			menuItem("Gene coexpression", tabName= "GCN", icon= shiny::icon("project-diagram")) %>% add_class("step_4"),
+			menuItem("miRNA explorer", tabName= "BymiRNA", icon= shiny::icon("compress-alt")) %>% add_class("step_3"),
+			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_4"),
+			menuItem("Gene coexpression", tabName= "GCN", icon= shiny::icon("project-diagram")) %>% add_class("step_5"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star"),
 				menuItem("Benchmarking results", tabName = "BenchRes"),
 				menuItem("Benchmarking backstage", tabName = "BenchBack")
-			) %>% add_class("step_5"),
+			) %>% add_class("step_6"),
 			menuItem("Single cell data", tabName= "SingleCell", icon= shiny::icon("braille"),
 				menuItem("Published studies", tabName = "scStudies"),
 				menuItem("Search data", tabName = "scData")
-			) %>% add_class("step_6"),
+			) %>% add_class("step_7"),
 
-			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_7"),
-			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_8"),
-			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_9"),
+			menuItem("Download data", tabName= "DownData", icon= shiny::icon("download")) %>% add_class("step_8"),
+			menuItem("FAQ", tabName= "FAQ", icon= shiny::icon("question")) %>% add_class("step_9"),
+			menuItem("Docs", tabName= "Docs", icon= shiny::icon("book")) %>% add_class("step_10"),
 
-			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_10"),
-			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_11")
+			menuItem("About us", icon= shiny::icon("info"),href= "https://www.fleming.gr/research/ibi/researchers/aidinis-lab") %>% add_class("step_11"),
+			menuItem("Report issues", icon= shiny::icon("github"), href= "https://github.com/dfanidis/Fibromine") %>% add_class("step_12")
 		)
 	),
 	dashboardBody(
@@ -1017,6 +1018,65 @@ shinyUI(dashboardPage(
 						),
 						width=12
 					) %>% add_class("step1_geneExplorer")
+				)
+			),
+
+			# ============================================================================
+			# miRNA explorer tab
+			# ============================================================================
+			tabItem(tabName = "BymiRNA",
+				fluidRow(
+					column(width=12,
+						box(title = NULL, footer = NULL,
+							fluidRow(width = 12,
+								tipify(
+									h3("miRNA - target DEGs shortlist", 
+										shiny::icon("question-circle")
+									),
+									title= paste0("A selection of differentially expressed ",
+										"miRNAs along with their deregulated potentially target genes."
+									)
+								)
+							),
+							fluidRow(
+								column(width = 2,
+									wellPanel(
+										selectizeInput(
+											inputId = "DEmiRNAIn",
+											label = "Select a gene of interest",
+											choices = NULL,
+											selected = NULL,
+											multiple = FALSE
+										),
+										actionButton(
+											inputId = "DEmiRNASearch", 
+											label = "Search", 
+											icon = shiny::icon("search"), 
+											style = "background-color: #d42132; color: white;
+												border-color: #d42132;"
+										),
+										helpText("Select an miRNA from the drop-down menu and press
+											the 'Search' button to obtain DEA data for that miRNA as well as
+											for the deregulated genes potentially interacting with it."
+										)
+									)
+								),
+								column(width = 5,		
+									h4("miRNA expression summary"),					
+									DT::dataTableOutput("DEmiRNATable",
+										) %>% withSpinner(color="#008d4c"),
+								),
+								column(width = 5,					
+									h4("Potential targets expression summary"),		
+									DT::dataTableOutput("DEtargetTable",
+										) %>% withSpinner(color="#008d4c"),
+								),
+								width = 12
+							),							
+							solidHeader = TRUE, width = 12,
+							collapsible = FALSE
+					    )
+					)
 				)
 			),
 
