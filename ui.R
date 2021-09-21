@@ -1397,7 +1397,7 @@ shinyUI(dashboardPage(
 											helpText("Select a gene from the drop-down menu and press
 												the 'Plot' button to visualize a gene coexpression network."
 											),
-											"Note: plotting of the first network may take some time. Please, be patient."
+											"Note: plotting of the FIRST PER SPECIES network may take some time. Please, be patient."
 										)
 									),
 									column(width = 10,							
@@ -1483,7 +1483,7 @@ shinyUI(dashboardPage(
 											helpText("Select a gene from the drop-down menu and press
 												the 'Plot' button to visualize a gene coexpression network."
 											),
-											"Note: plotting of the first network may take some time. Please, be patient."
+											"Note: plotting of the FIRST PER SPECIES network may take some time. Please, be patient."
 										)
 									),
 									column(width = 10,							
@@ -1771,43 +1771,58 @@ shinyUI(dashboardPage(
 						h2("FAQ"),
 						bsCollapse(id = "collapseFaq", multiple = FALSE, open = NULL,
 							bsCollapsePanel(
-								"How to explore one / integrate multiple single species transcriptomic datasets?", 
+								"1. How to explore one / integrate multiple single species transcriptomic datasets?", 
 								includeMarkdown("./www/faq/faqA.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"How to integrate transcriptomic datasets across species?", 
+								"2. How to integrate transcriptomic datasets across species?", 
 								includeMarkdown("./www/faq/faqB.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"How to explore one / integrate multiple proteomic datasets?", 
+								"3. How to explore one / integrate multiple proteomic datasets?", 
 								includeMarkdown("./www/faq/faqC.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"How to search for the expression pattern of a specific (or multiple) gene?", 
+								"4. How to search for the expression pattern of a specific (or multiple) genes (bulk sequencing)?", 
 								includeMarkdown("./www/faq/faqD.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"How to search for the expression pattern of a specific protein?",
+								"5. How to search for the expression pattern of a specific gene (single cell sequencing)?", 
 								includeMarkdown("./www/faq/faqE.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"How to create a condition-specific protein-protein interaction network?", 
+								"6. How to search for the expression pattern of a specific protein?",
 								includeMarkdown("./www/faq/faqF.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"Are Fibromine data available for download?", 
+								"7. How to create a condition-specific protein-protein interaction network?", 
 								includeMarkdown("./www/faq/faqG.md"),
 								style = "danger"
 							),
 							bsCollapsePanel(
-								"Where I can find more technical details about Fibromine?", 
+								"8. How to plot a gene co-expression network?", 
 								includeMarkdown("./www/faq/faqH.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"9. How to interrogate potential miRNA-mRNA interactions of differentially expressed 'partners'?", 
+								includeMarkdown("./www/faq/faqI.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"10. Are Fibromine data available for download?", 
+								includeMarkdown("./www/faq/faqJ.md"),
+								style = "danger"
+							),
+							bsCollapsePanel(
+								"11. Where I can find more technical details about Fibromine?", 
+								includeMarkdown("./www/faq/faqK.md"),
 								style = "danger"
 							)
 						)

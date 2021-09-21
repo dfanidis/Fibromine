@@ -1,19 +1,11 @@
-1. To construct a condition specific protein-protein interaction (PPI) network, first search for a specific protein as described in step 1 of **3. Search for the expression pattern of a specific protein.**.
+Navigate to the **Protein explorer**, type the name of the gene coding your protein of interest into the **search box (1)** at the upper left corner of the explorer and then press the **Search (2)** button below. The results presented are constructed as thus: 
 
-2. Then, move to the **PPI network (1)** tab of the **Protein explorer** and press the **Plot (2)** button. The network should be created within a few seconds.
+- the **info boxes (3)** at the top of the page summarise some important information regarding the protein queried, 
+- the **Search results (4)** tab displays some general information sourced from UniProt/SwissProt,
+- the **differential expression results**, if any, are presented at the homonym table **(5)**
 
-	<a href= "faq/faqScreenshots/proteinExpl2.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./faqScreenshots/proteinExpl2.png" alt="image" style="width:900px;height:750px" class="center"/>
-	</a>
+*Note: the results presented in the following example screenshots can be recreated by pressing the Example button below the Search button of the explorer.*
 
-3. To annotate the network **select tissue (3)** and then **comparison (4)** from the homonym dropdown menus at the right of the network. Finally press the **Annotate (5)** button and wait for a few seconds. In order to annotate the network using data from different conditions, press the **Reset** button next to **Annotate (5)**. To further fine-tune network annotation, change the p-value and fold change thresholds used.
-
-	<a href= "faq/faqScreenshots/proteinExpl3.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./faqScreenshots/proteinExpl3.png" alt="image" style="width:900px;height:500px" class="center"/>
-	</a>
-
-4. For transparency reasons, the data used to annotate the network are presented into the **Data used (6)** tab.
-	
-	<a href= "faq/faqScreenshots/proteinExpl4.png" target="_blank" rel='noopener noreferrer'> 
-		<img src= "./faqScreenshots/proteinExpl4.png" alt="image" style="width:900px;height:400px" class="center"/>
-	</a>
+<a href= "faq/faqScreenshots/proteinExpl1.png" target="_blank" rel='noopener noreferrer'> 
+	<img src= "./faqScreenshots/proteinExpl1.png" alt="image" style="width:900px;height:350px" class="center"/>
+</a>

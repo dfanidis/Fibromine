@@ -4946,7 +4946,7 @@ shinyServer(function(input, output, session) {
 		progress$set(
 			message = "Fetching data", 
 			detail = paste("All other actions will be currently suspended", 
-				"Note: plotting of the FIRST network may take some time. Please, be patient."),
+				"Note: plotting of the FIRST PER SPECIES network may take some time. Please, be patient."),
 			value=0
 		)
 		progress$inc(0.10)
@@ -5070,7 +5070,7 @@ shinyServer(function(input, output, session) {
 		progress$set(
 			message = "Fetching data", 
 			detail = paste("All other actions will be currently suspended\n", 
-				"Note: plotting of the FIRST network may take some time. Please, be patient."),
+				"Note: plotting of the FIRST PER SPECIES network may take some time. Please, be patient."),
 			value=0
 		)
 		progress$inc(0.10)
