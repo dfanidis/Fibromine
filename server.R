@@ -3279,30 +3279,49 @@ shinyServer(function(input, output, session) {
 					}
 
 					## miRNA - targets info-----------------------------------------------------------------
+					# If unique(annot_temp$prodID) is not used below,
+					# then the search will be done for >1 identical
+					# prodIDs. This is because in annot_temp, prodID and premiRNAac
+					# have a 1:many relationship
 					miRDB <- dbGetQuery(
 						conn=fibromine_db,
 						statement= '
-							SELECT 
-								* 
+							SELECT DISTINCT
+								prodID, RefSeqmRNA, Score
 							FROM 
 								miRDB 
 							WHERE 
 								prodID = :x
 						;',
-						params= list(x= annot_temp$prodID)
+						params= list(x= unique(annot_temp$prodID))
 					)
-					miRDB <- subset(miRDB, select= -miRDBid)
+					# miRDB <- subset(miRDB, select= -miRDBid)
 
 					targetName <- dbGetQuery(
 						conn= fibromine_db,
 						statement= '
-							SELECT 
-								Symbol, RefSeqmRNA FROM GeneAnnotation 
+							SELECT DISTINCT
+								ENSGid, Symbol, RefSeqmRNA 
+							FROM 
+								GeneAnnotation 
 							WHERE 
-								RefSeqmRNA = :x
+								RefSeqmRNA != "-"
 						;',
-						params= list(x= unique(miRDB$RefSeqmRNA))
 					)
+					targetName <- targetName[grepl("ENSG", targetName$ENSGid), ]
+					targetName$ENSGid <- NULL
+					targetName <- split(targetName, f = targetName$Symbol)
+					targetName <- lapply(targetName, function(x){
+						out <- data.frame(
+							Symbol = x$Symbol,
+							RefSeqmRNA = unlist(strsplit(x$RefSeqmRNA, split = "|||", fixed = TRUE))
+						)
+						return(unique(out))
+					})
+					targetName <- do.call("rbind", targetName)
+					targetName <- targetName[which(targetName$RefSeqmRNA %in% unique(miRDB$RefSeqmRNA)),]
+
+					# Merge ensembl annotation with miRDB data
 					miRDB <- merge(miRDB, targetName, by= "RefSeqmRNA")
 
 					## Render table
