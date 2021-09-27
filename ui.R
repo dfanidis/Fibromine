@@ -35,7 +35,7 @@ shinyUI(dashboardPage(
 			menuItem("Gene explorer", tabName= "ByGene", icon= shiny::icon("dna")) %>% add_class("step_2"),
 			menuItem("miRNA explorer", tabName= "BymiRNA", icon= shiny::icon("compress-alt")) %>% add_class("step_3"),
 			menuItem("Protein explorer", tabName= "ByProtein", icon= shiny::icon("arrows-alt")) %>% add_class("step_4"),
-			menuItem("Gene coexpression", tabName= "GCN", icon= shiny::icon("project-diagram")) %>% add_class("step_5"),
+			menuItem("Gene co-expression", tabName= "GCN", icon= shiny::icon("project-diagram")) %>% add_class("step_5"),
 			menuItem("Datasets benchmarking", tabName= "Decor", icon= shiny::icon("star"),
 				menuItem("Benchmarking results", tabName = "BenchRes"),
 				menuItem("Benchmarking backstage", tabName = "BenchBack")
