@@ -257,6 +257,7 @@ shinyUI(dashboardPage(
 				fluidRow(
 					includeCSS("./www/styles.css"),
 					useShinyjs(),
+					tags$head(includeHTML(("./www/google-analytics.html"))),
 					fluidRow(
 						h3("Transcriptomic datasets explorer") %>% add_class("step1_trans"),
 					),

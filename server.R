@@ -4738,7 +4738,24 @@ shinyServer(function(input, output, session) {
 				nSamples <- unlist(nSamples)
 				gse <- gse[which(nSamples == max(nSamples)), "DatasetID"]
 
-				orientation <- as.numeric(sign(subset(x, GSE == gse, log2FC)))
+				# Do the two datasets have the same number of samples?
+				orientation <- ifelse(length(gse) == 2,
+					# If yes
+					{
+						# Is the orientation the same between the datasets?
+						# If yes take the average value
+						if(sign(x[1, "log2FC"]) == sign(x[2, "log2FC"])) {
+							mean(x$log2FC)
+						# If no return "Non DE"
+						} else {
+							"Non DE"
+						}
+					},
+					# If no procceed as planned
+					as.numeric(sign(subset(x, GSE == gse, log2FC)))
+				)				
+
+				# orientation <- as.numeric(sign(subset(x, GSE == gse, log2FC)))
 				return(orientation)
 
 			} else if (nrow(x) > 2 && !is.null(x)) {									## If in >2 samples take the prevailing orientation
